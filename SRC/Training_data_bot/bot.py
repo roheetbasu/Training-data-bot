@@ -54,4 +54,3 @@ class TrainingDataBot:
             self.jobs: Dict[UUID, ProcessingJob] = {}
         except Exception as e:
             raise ConfigurationError("Failed to initialize bot components",...)
-        

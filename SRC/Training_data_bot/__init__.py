@@ -27,5 +27,7 @@ from .sources import (
 from .task import (
     QAGenerator,
     ClassificationGenerator,
-    
+    SummarizationGenerator,
+    TaskTemplate
 )
+
