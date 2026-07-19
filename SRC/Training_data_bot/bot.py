@@ -37,4 +37,21 @@ class TrainingDataBot:
         self._init_components()
         self.logger.info("Training Data Bot intialized sucessfully")
         
+    def _init_components(self):
+        """Initiaize all bot components"""
+        try:
+            self.loader =UnifiedLoader()
+            self.decodo_client = DecodoClient()
+            self.ai_client = AIClient()
+            self.taskmanager = TaskManager()
+            self.preprocessing = TextPreprocessor()
+            self.evaluator = QualityEvaluator()
+            self.exporter = DatasetExporter()
+            self.db_manager = DatabaseManager()
+            #state (memory boxes)
+            self.documents: Dict[UUID, Document] = {}
+            self.datasets: Dict[UUID, Dataset] = {}
+            self.jobs: Dict[UUID, ProcessingJob] = {}
+        except Exception as e:
+            raise ConfigurationError("Failed to initialize bot components",...)
         
