@@ -54,3 +54,26 @@ class TrainingDataBot:
             self.jobs: Dict[UUID, ProcessingJob] = {}
         except Exception as e:
             raise ConfigurationError("Failed to initialize bot components",...)
+        
+    async def load_documents(
+        self,
+        sources: Union[str, Path, List[Union[str, Path]]],
+        doc_types,
+        **kwargs
+                ):
+        
+        if isinstance ( sources , (str , Path )):
+            sources = [ sources ]
+        
+        documents = []
+        for source in sources:
+            source_path = Path(source)
+            if source_path.is_dir():
+                dir_docs = await self.loader.load_directory(source_path)
+                documents.extend(dir_docs)
+            else:
+                doc =  await self.loader.load_single(source_path)
+                documents.append(doc)
+                
+        for doc in documents:
+            self.documents[doc.id] = doc
