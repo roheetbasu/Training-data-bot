@@ -109,7 +109,7 @@ class TrainingDataBot:
         
     async def process_documents(
         self,
-        documents: Optional[List[Documents]] = None,
+        documents: Optional[List[Document]] = None,
         task_types: Optional[List[TaskType]] = None,
         quality_filter: bool = True,
         **kwargs    
