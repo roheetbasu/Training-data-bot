@@ -216,6 +216,24 @@ class TrainingDataBot:
                     job.error_message = str(e)
                 self.logger.error(f"Document processing failed: {e}")
                 raise
+            
+    async def evaluate_dataset(
+        self,
+        dataset: Dataset,
+        detailed_report: bool = True
+    ):
+        with LogContext("Dataset_evaluation", dataset_id=str(dataset.id)):
+            try:
+                report = await self.evaluator.evaluate_dataset(
+                    dataset = dataset,
+                    detailed = detailed_report
+                )
+                
+                self.logger.info(f"Dataset Evaluation Completed. Overall score: {report.overall_score:.2f}")
+                return report
+            except Exception as e:
+                self.logger.error(f"Dataset Evaluation failed: {e}")
+                raise
     
     async def export_dataset(
         self,
@@ -245,7 +263,14 @@ class TrainingDataBot:
             except Exception as e:
                 self.logger.error(f"Dataset export failed: {e}")
                 raise
-            
+    
+    def get_statistics(self):
+        return{
+            "documents":{
+                "total":len(self.documents),
+                "by_type":self._count_by_type{self.documents.values(), "doc_type"}
+            }
+        }
                 
             
         
