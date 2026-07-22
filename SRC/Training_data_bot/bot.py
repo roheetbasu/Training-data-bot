@@ -115,59 +115,108 @@ class TrainingDataBot:
         **kwargs    
     )-> Dataset:
         with LogContext("documents processing"):
-            
-            # use all documents if none is specified
-            if documents is None:
-                documents = list(self.documents.values())
-            
-            if not documents:
-                raise TrainingDataBotError("No documents to process")
-            
-            # use a default task if none is specified
-            if task_types is None:
-                task_types = [TaskType.QA_GENERATION]
+            try:
+                # use all documents if none is specified
+                if documents is None:
+                    documents = list(self.documents.values())
                 
-            #create a processing job 
-            job = ProcessingJob(
-                name=f"Process {len(documents)} documents",
-                job_type="document_processing",
-                total_items=len(documents) * len(task_types),
-                input_data={
-                    "document_count": len(documents),
-                    "task_types": [t.values for t in task_types],
-                    "quality_filter": quality_filter
-                }   
-            )
-            self.jobs[job.id]= job
-            job.status = ProcessingStatus.PROCESSING
-            
-            #process documents
-            all_examples = []
-            
-            for doc in documents:
-                #preprocessing the documents( chunking, cleaning)
-                chunks = await self.preprocessing.process_document(doc)
+                if not documents:
+                    raise TrainingDataBotError("No documents to process")
                 
-                # process each chunks with each chunks types
-                for task_type in task_types:
-                    for chunk in chunks:
-                        try:
-                            #execute the task
-                            result = await self.taskmanager.execute_task(
-                                task_type = task_type,
-                                input_chunk = chunk,
-                                client = self.ai_client
-                            )
-                            
-                            #create an trainingexamples:
-                            example = TrainingExample(
-                                input_text = chunk.content,
-                                output_text = result.output,
-                                task_type = task_type,
-                                source_document_id = doc.id,
-                                source_chunk_id = chunk.id,
-                                template_id = result.template_id,
-                                quality_scores = result.quality_scores
-                            )
-                        except:
+                # use a default task if none is specified
+                if task_types is None:
+                    task_types = [TaskType.QA_GENERATION]
+                    
+                #create a processing job 
+                job = ProcessingJob(
+                    name=f"Process {len(documents)} documents",
+                    job_type="document_processing",
+                    total_items=len(documents) * len(task_types),
+                    input_data={
+                        "document_count": len(documents),
+                        "task_types": [t.values for t in task_types],
+                        "quality_filter": quality_filter
+                    }   
+                )
+                self.jobs[job.id]= job
+                job.status = ProcessingStatus.PROCESSING
+                
+                #process documents
+                all_examples = []
+                
+                for doc in documents:
+                    #preprocessing the documents( chunking, cleaning)
+                    chunks = await self.preprocessing.process_document(doc)
+                    
+                    # process each chunks with each chunks types
+                    for task_type in task_types:
+                        for chunk in chunks:
+                            try:
+                                #execute the task
+                                result = await self.taskmanager.execute_task(
+                                    task_type = task_type,
+                                    input_chunk = chunk,
+                                    client = self.ai_client
+                                )
+                                
+                                #create an trainingexamples:
+                                example = TrainingExample(
+                                    input_text = chunk.content,
+                                    output_text = result.output,
+                                    task_type = task_type,
+                                    source_document_id = doc.id,
+                                    source_chunk_id = chunk.id,
+                                    template_id = result.template_id,
+                                    quality_scores = result.quality_scores
+                                )
+                                
+                                # Apply quality filter
+                                if quality_filter:
+                                    quality_report = await self.evaluator.evaluate(example)
+                                    if quality_report.passed:
+                                        all_examples.append(example)
+                                        example.quality_approved = True
+                                    else:
+                                        example.quality_approved = False
+                                        self.logger.debug(f"Example filtered due to lack of quality")
+                                else:
+                                    all_examples.append(example)
+                                
+                                job.processed_items += 1
+                                    
+                            except Exception as e:
+                                self.logger.error(f"Failed to process the chunk: {e}")
+                                job.failed_items += 1
+                                continue
+                
+                # create dataset
+                dataset = Dataset(
+                    name=f"Generated Dataset {len(self.datasets)  + 1}",
+                    description=f"Dataset generated from {len(documents)} documents",
+                    examples=all_examples
+                )
+                
+                #store dataset
+                self.datasets[dataset.id]=dataset
+                
+                #update job status
+                job.status = ProcessingStatus.COMPLETED
+                job.output_data = {
+                    "dataset_id" : str(dataset.id),
+                    "examples_generated": len(all_examples),
+                    "quality_filtered": quality_filter,
+                }
+                
+                self.logger.info(f"Processing Completed. Generated {len(all_examples)} examples")
+                return dataset
+        
+            except Exception as e:
+                if "job" in locals():
+                    job.status = ProcessingStatus.FAILED
+                    job.error_message = str(e)
+                self.logger.error(f"Document processing failed: {e}")
+                raise
+            
+                
+                                
                 
