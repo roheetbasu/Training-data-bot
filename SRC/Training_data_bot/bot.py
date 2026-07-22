@@ -225,6 +225,29 @@ class TrainingDataBot:
         split_data: bool = True,
         **kwargs
     ):
+        with LogContext("dataset_export", dataset_id=str(dataset.id), format=format.value):
+            try:
+                exported_path = await self.exporter.export_dataset(
+                    dataset=dataset,
+                    output_path=Path(output_path),
+                    format=format,
+                    split_data=split_data,
+                    **kwargs
+                )
+                
+                # Update dataset metadata
+                dataset.export_format = format
+                dataset.export_path = exported_path
+                
+                self.logger.info(f"Dataset exported to {exported_path}")
+                return exported_path
+            
+            except Exception as e:
+                self.logger.error(f"Dataset export failed: {e}")
+                raise
+            
+                
+            
         
         
             
