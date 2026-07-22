@@ -216,6 +216,17 @@ class TrainingDataBot:
                     job.error_message = str(e)
                 self.logger.error(f"Document processing failed: {e}")
                 raise
+    
+    async def export_dataset(
+        self,
+        dataset: Dataset,
+        output_path: Union[str, Path],
+        format: ExportFormat = ExportFormat.JSONL,
+        split_data: bool = True,
+        **kwargs
+    ):
+        
+        
             
                 
                                 
