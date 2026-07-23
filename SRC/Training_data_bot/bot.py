@@ -279,10 +279,15 @@ class TrainingDataBot:
             "jobs":{
                 "total":len(self.jobs),
                 "by_status":self._count_by_type(self.jobs.values(), "status"),
-                "active":len([j for j in self.jobs.values() if j.status == ProcessingStatus.COMPLETED])
-                
-            }
-            
+                "active":len([j for j in self.jobs.values() if j.status == ProcessingStatus.COMPLETED]),
+            },
+            "quality":{
+                "approved_examples":sum(
+                    len([ex for ex in ds.examples if ex.quality_approved])
+                    for ds in self.datasets.values()
+                ),
+                "total_examples": sum(len(ds.examples) for ds in self.datasets.values()),
+            }      
         }
                 
             
