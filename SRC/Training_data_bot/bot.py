@@ -290,17 +290,53 @@ class TrainingDataBot:
             }      
         }
         
-        def _count_by_type(self, items, attr_name: str):
+    def _count_by_type(self, items, attr_name: str):
+        
+        counts={}
+        for item in items:
+            value = getattr(item, attr_name)
+            if hasattr(value, "value"): #handle enums
+                value = value.value
+            counts[str(value)] = counts.get(str(value),0) + 1
+        return counts
+    
+    def _count_examples_by_task_type(self):
+        
+        counts={}
+        for dataset in self.datasets.values():
+            for example in dataset.examples:
+                task_type = example.task_type.value
+                counts[task_type] = counts.get(task_type , 0)  + 1
+        
+        return counts
+    
+    async def cleanup(self):
+        
+        try:
             
-            counts={}
-            for item in items:
-                value = getattr(item, attr_name)
-                if hasattr(value, "value"): #handle enums
-                    value = value.value
-                count[str[value]] = count.get(str(value),0) + 1
-            return count
-        
-        
+            #close database connections
+            await self.db_manager.close()
+            
+            #close Loader
+            if hasattr(self.loader, 'close'):
+                await self.loader.close()
+                
+            #close remaining http client
+            if hasattr(self.decodo_client, 'close'):
+                await self.decodo_client.close()
+                
+            # AI client cleanup
+            if hasattr(self.ai_client, 'close'):
+                await self.ai_client.close()
+                
+            self.logger.info("Bot cleanup completed")
+            
+        except Exception as e:
+            self.logger.error(f"Bot cleanup failed: {e}")
+            
+    async def __aenter__(self):
+        return self
+                
 
                 
             
