@@ -268,7 +268,7 @@ class TrainingDataBot:
         return{
             "documents":{
                 "total":len(self.documents),
-                "by_type":self._count_by_type{self.documents.values(), "doc_type"},
+                "by_type":self._count_by_type(self.documents.values(), "doc_type"),
                 "total_size":sum(doc.size for doc in self.documents.values()),
             },
             "datasets":{
@@ -289,6 +289,19 @@ class TrainingDataBot:
                 "total_examples": sum(len(ds.examples) for ds in self.datasets.values()),
             }      
         }
+        
+        def _count_by_type(self, items, attr_name: str):
+            
+            counts={}
+            for item in items:
+                value = getattr(item, attr_name)
+                if hasattr(value, "value"): #handle enums
+                    value = value.value
+                count[str[value]] = count.get(str(value),0) + 1
+            return count
+        
+        
+
                 
             
         
