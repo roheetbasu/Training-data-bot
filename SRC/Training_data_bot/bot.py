@@ -268,8 +268,21 @@ class TrainingDataBot:
         return{
             "documents":{
                 "total":len(self.documents),
-                "by_type":self._count_by_type{self.documents.values(), "doc_type"}
+                "by_type":self._count_by_type{self.documents.values(), "doc_type"},
+                "total_size":sum(doc.size for doc in self.documents.values()),
+            },
+            "datasets":{
+                "total":len(self.datasets),
+                "total_examples":sum(len(ds.examples) for ds in self.datasets.values()),
+                "by_task_types": self._count_examples_by_task_type(),
+            },
+            "jobs":{
+                "total":len(self.jobs),
+                "by_status":self._count_by_type(self.jobs.values(), "status"),
+                "active":len([j for j in self.jobs.values() if j.status == ProcessingStatus.COMPLETED])
+                
             }
+            
         }
                 
             
