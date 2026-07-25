@@ -359,8 +359,13 @@ class TrainingDataBot:
         )
         
         #Export dataset
+        await self.export_dataset(
+            dataset=dataset,
+            output_path=output_path,
+            format=export_format
+        )
         
-        
+        return dataset
 
                 
             
