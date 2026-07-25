@@ -74,7 +74,7 @@ class TrainingDataBot:
     async def load_documents(
         self,
         sources: Union[str, Path, List[Union[str, Path]]],
-        doc_types,
+        doc_types: Optional[List[DocumentType]] = None,
         **kwargs
                 )-> Document:
         
@@ -336,7 +336,31 @@ class TrainingDataBot:
             
     async def __aenter__(self):
         return self
-                
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.cleanup()
+        
+    #Convenience methods
+    async def quick_process(
+        self,
+        source:Union[str, Path],
+        output_path: Union[str, Path],
+        task_types: Optional[List[TaskType]] = None,
+        export_format: ExportFormat = ExportFormat.JSONL
+    ):
+        
+        #Load Documents
+        documents = await self.load_documents([source])
+        
+        #Process documents
+        dataset = await self.process_documents(
+            documents=documents,
+            task_types=task_types
+        )
+        
+        #Export dataset
+        
+        
 
                 
             
