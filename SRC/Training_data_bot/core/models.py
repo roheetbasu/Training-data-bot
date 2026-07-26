@@ -40,4 +40,13 @@ class BaseEntity(BaseModel):
         RED_TEAMING = "red_teaming"
         INSTRUCTION_RESPONSE = "instruction_response"
         
+    class QualityMetrics(str, Enum):
+        """ Quality assessment metrics"""
+        TOXICITY = "toxicity"
+        BIAS = "bias"
+        DIVERSITY = "diversity"
+        COHERENCE = "coherence"
+        RELEVANCE = "relevance"
+        
+        
         
