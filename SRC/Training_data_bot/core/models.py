@@ -48,5 +48,14 @@ class BaseEntity(BaseModel):
         COHERENCE = "coherence"
         RELEVANCE = "relevance"
         
+    class ProcessingStatus(str, Enum):
+        """ Processing status values """
+        PENDING = "pending"
+        PROCESSING = "processing"
+        COMPLETED = "completed"
+        FAILED = "failed"
+        CANCELLED = "cancelled"
+        
+         
         
         
