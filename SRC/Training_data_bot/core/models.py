@@ -33,4 +33,11 @@ class BaseEntity(BaseModel):
         
     class TaskType(str, Enum):
         """Available Task types"""
+        QA_GENERATION = "qa_generation"
+        CLASSIFICATION = "classification"
+        SUMMARIZATION = "summarization"
+        NER = "named_entity_recognition"
+        RED_TEAMING = "red_teaming"
+        INSTRUCTION_RESPONSE = "instruction_response"
+        
         
