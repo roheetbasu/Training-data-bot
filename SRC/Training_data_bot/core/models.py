@@ -56,6 +56,14 @@ class BaseEntity(BaseModel):
         FAILED = "failed"
         CANCELLED = "cancelled"
         
+    class ExportFormat(str, Enum):
+        """ Export format options """
+        JSONL = "jsonl"
+        CSV = "csv"
+        PARQUET = "parquet"
+        HUGGINGFACE = "huggingface"
+        OPENAI = "openai"
+        
          
         
         
