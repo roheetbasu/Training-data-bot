@@ -93,29 +93,42 @@ class Document(BaseEntity):
             return len(values["content"])
         return v
 
-    class TextChunk(BaseEntity):
-        """ Represent the chunk from the documents """
-        
-        document_id : UUID
-        content: str
-        start_index: int
-        end_index: int
-        chunk_index: int
-        token_count: int = 0
-        
-        #context preservation
-        preceding_context: Optional[str] = None
-        following_context: Optional[str] = None
-        
-        #semantic info
-        embeddings: Optional[List[float]] = None
-        topics: List[str] = Field(default_factory=list)
-        
-        @validator ("token_count", pre=True, always=True)
-        def estimate_token_count(cls, v, values):
-            if v == 0 and "content" in values:
-                # Rough estimation: 1 token nearly equal to 4 character
-                return  len(values["content"])//4
-            return v 
+class TextChunk(BaseEntity):
+    """ Represent the chunk from the documents """
+    
+    document_id : UUID
+    content: str
+    start_index: int
+    end_index: int
+    chunk_index: int
+    token_count: int = 0
+    
+    #context preservation
+    preceding_context: Optional[str] = None
+    following_context: Optional[str] = None
+    
+    #semantic info
+    embeddings: Optional[List[float]] = None
+    topics: List[str] = Field(default_factory=list)
+    
+    @validator ("token_count", pre=True, always=True)
+    def estimate_token_count(cls, v, values):
+        if v == 0 and "content" in values:
+            # Rough estimation: 1 token nearly equal to 4 character
+            return  len(values["content"])//4
+        return v
+ 
+# Task Model       
+class TextTemplate(BaseEntity):
+
+    name: str
+    description: str
+    prompt_template: str
+    
+    #Task specific configuration
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    
+    
+         
         
         
