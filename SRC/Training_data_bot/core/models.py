@@ -346,6 +346,7 @@ class FileInfo(BaseModel):
         return v
         
 class ProgressInfo(BaseModel):
+    """ Progress Information for operations"""
     
     current: int = 0
     total: int = 0
