@@ -128,6 +128,15 @@ class TextTemplate(BaseEntity):
     #Task specific configuration
     parameters: Dict[str, Any] = Field(default_factory=dict)
     
+    #Quality Requirement
+    min_output_length: int = 10
+    max_output_length: int = 2000
+    quality_thresholds: Dict[QualityMetrics, float] = Field(default_factory=dict)
+    
+    #performance settings
+    timeout: int = 60
+    max_retries: int = 3
+    
     
          
         
