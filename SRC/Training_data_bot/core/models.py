@@ -330,8 +330,34 @@ class Projectconfig(BaseModel):
     supported_formats: List[DocumentType] = Field(default_factory=list)
     
 #utility Models
+class FileInfo(BaseModel):
+    """ Information about a file """
+    path: Path
+    name: str
+    size: int
+    modified_at: datetime
+    file_type: DocumentType
+    encoding: Optional[str] = None
+    
+    @validator("name", pre= True, always=True)
+    def extract_name(cls, v, values):
+        if not v and "path" in values:
+            return values["Path"].name
+        return v
         
-        
+class ProgressInfo(BaseModel):
+    
+    current: int = 0
+    total: int = 0
+    message: str = ""
+    percentage: float = 0.0
+    eta: Optional[datetime] = None
+    
+    @validator("percentage", pre=True, always=True)
+    def calculate_percentage(cls, v,values):
+        if values.get("total", 0) > 0:
+            return (values.get("current", 0) / values["total"])
+        return 0.0
          
         
         
