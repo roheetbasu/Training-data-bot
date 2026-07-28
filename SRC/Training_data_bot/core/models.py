@@ -305,8 +305,31 @@ class ProcessingJob(BaseEntity):
         return (self.processsed_items/self.total_items)
     
        
+# Configuration Models
+class Projectconfig(BaseModel):
+    """ Project-level configuration """
     
+    name: str
+    description: str
+    version: str = "1.0.0"
     
+    # Task configuration
+    default_task_types: List[TaskType] = Field(default_factory=list)
+    quality_requirements: Dict[QualityMetric, float] = Field(default_factory=dict)
+    
+    #Processing Settings
+    batch_size: int =  10
+    max_workers: int = 4
+    timeout: int = 300
+    
+    #Export settings
+    default_export_format: ExportFormat = ExportFormat.JSONL
+    output_directory: Path = Path("./outputs")
+    
+    #Data source settings
+    supported_formats: List[DocumentType] = Field(default_factory=list)
+    
+#utility Models
         
         
          
