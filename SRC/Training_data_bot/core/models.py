@@ -271,9 +271,38 @@ class QualityReport(BaseEntity):
     assessor: str = "system" # or User ID
     assessment_time: float = 0.0
     
-
+class ProcessingJob(BaseEntity):
+    """ Represent a long running process """
     
+    name: str
+    job_type: str # document processing, "task_execution"
+    status: ProcessingStatus = ProcessingStatus.PENDING
     
+    #Input/Output
+    input_data: Dict[str, Any] = Field(default_factory=dict)
+    output_data: Dict[str, Any] = Field(default_factory=dict)
+    
+    #Process tracking
+    total_items: int = 0
+    processsed_items: int = 0
+    failed_items: int = 0
+    
+    # Timing
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    estimated_completion: Optional[datetime] = None
+    
+    # Error handling
+    error_message: Optional[str] = None
+    retry_count: int = 0
+    max_retries: int = 3
+    
+    @property
+    def progress_percentage(self):
+        """ calculate progress percentage """
+        if self.total_items == 0:
+            return 0.0
+        return (self.processsed_items/self.total_items)
     
        
     
