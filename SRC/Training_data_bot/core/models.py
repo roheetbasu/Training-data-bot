@@ -213,6 +213,66 @@ class Dataset(BaseEntity):
             return len(values["examples"])
         return v
     
+# Api Models
+class APIRequest(BaseModel):
+    """ Base API Request """
+    
+    request_id: UUID = Field(default_factory=uuid4)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class APIResponse(BaseModel):
+    """ Base API response model """
+    
+    request_id: UUID
+    timestamps: datetime = Field(default_factory=datetime.utcnow)
+    success: bool
+    message: Optional[str] = None
+    data: Optional[Any] = None
+    error: Optional[Dict[str, Any]] = None
+    
+class DecodoRequest(APIRequest):
+    """ Request to Decodo API """
+    
+    prompt: str
+    input_text: str
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    task_type: Optional[TaskType] = None
+    
+class DecodoResponse(APIResponse):
+    """ Request from Decodo API """
+    
+    output: Optional[str] = None
+    confidence: Optional[float] = None
+    token_usage: int = 0
+    cost: Optional[float] = None
+    processing_time: Optional[float] = None
+    
+# Quality Assessment
+class QualityReport(BaseEntity):
+    """ Quality assessment report for a dataset or example """
+    
+    target_id: UUID # Id of dataset or example being assessed
+    target_type: str # "dataset" or "example"
+    
+    # Overall quality core
+    overall_score: float
+    passed: bool
+    
+    # metric 
+    metric_scores: Dict[QualityMetric, float] = Field(default_factory=dict)
+    metric_details: Dict[QualityMetric, Dict] = Field(default_factory=dict)
+    
+    # Issues found
+    issues: List[str] = Field(default_factory=list)
+    warning: List[str] = Field(default_factory=list)
+    
+    #Assessment metadata
+    assessed_at: datetime = Field(default_factory=datetime.utcnow)
+    assessor: str = "system" # or User ID
+    assessment_time: float = 0.0
+    
+
+    
     
     
        
