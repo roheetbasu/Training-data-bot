@@ -182,7 +182,40 @@ class TrainingExample(BaseEntity):
     category: Optional[str] = None     # for classification task
     
     
+class Dataset(BaseEntity):
+    """ A collection of training examples """
     
+    name: str
+    description: str
+    version: str = "1.0.0"
+    
+    #Context
+    examples: List[TrainingExample] = Field(default_factory=list)
+    
+    #statistics
+    total_examples: int = 0
+    task_type_counts: Dict[TaskType, int] = Field(default_factory=dict)
+    quality_stats: Dict[QualityMetric, Dict[str, float]] = Field(default_factory=dict)
+    
+    #splits
+    train_split: float = 0.8
+    validation_split: float = 0.1
+    test_split: float = 0.1
+    
+    #Export info
+    export_format: ExportFormat = ExportFormat.JSONL
+    exported_at: Optional[datetime] = None
+    export_path: Optional[Path] = None
+    
+    @validator("total_examples", pre=True, always=True)
+    def calculate_total_examples(cls, v, values):
+        if "examples" in values:
+            return len(values["examples"])
+        return v
+    
+    
+    
+       
     
     
         
