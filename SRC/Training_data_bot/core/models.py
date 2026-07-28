@@ -40,7 +40,7 @@ class TaskType(str, Enum):
     RED_TEAMING = "red_teaming"
     INSTRUCTION_RESPONSE = "instruction_response"
     
-class QualityMetrics(str, Enum):
+class QualityMetric(str, Enum):
     """ Quality assessment metrics"""
     TOXICITY = "toxicity"
     BIAS = "bias"
@@ -131,13 +131,62 @@ class TextTemplate(BaseEntity):
     #Quality Requirement
     min_output_length: int = 10
     max_output_length: int = 2000
-    quality_thresholds: Dict[QualityMetrics, float] = Field(default_factory=dict)
+    quality_thresholds: Dict[QualityMetric, float] = Field(default_factory=dict)
     
     #performance settings
     timeout: int = 60
     max_retries: int = 3
     
+class TaskResult(BaseEntity):
+    """Result of Task Execution"""
+    task_id: UUID
+    template_id: UUID
+    input_chunk: UUID
     
+    #output
+    output: str
+    confidence: Optional[float] = None
+    
+    #quality_scores
+    quality_scores: Dict[QualityMetric, float] = Field(default_factory=dict)
+    
+    #processing info
+    processing_time: float
+    token_usages: int = 0
+    cost: Optional[float] = None
+    
+    #status
+    status: ProcessingStatus = ProcessingStatus.PENDING
+    error_message: Optional[str] = None
+    
+#Training Data Models
+class TrainingExample(BaseEntity):
+    """ A single training examples """
+    
+    input_text: str
+    output_text: str
+    task_type: TaskType
+    
+    #source tracking
+    source_document_id: UUID
+    source_chunk_id: Optional[UUID] = None
+    template_id: Optional[UUID] = None
+    
+    #quailty assessment
+    quality_scores: Dict[QualityMetric, float] = Field(default_factory=dict)
+    quality_approved: Optional[bool] = None
+    
+    # Additional fields for different formats
+    instruction: Optional[str] = None  # for instruction following dataset
+    context: Optional[str] = None      # for context based task 
+    category: Optional[str] = None     # for classification task
+    
+    
+    
+    
+    
+        
+        
          
         
         
