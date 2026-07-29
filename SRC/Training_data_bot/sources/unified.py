@@ -51,7 +51,7 @@ class UnifiedLoader(BaseLoader):
                 with LogContext("Unified_load_single", source=str(source)):
                         try:
                                 #Determine source type and select appropriate leader
-                                loader = self.__select__loader(source)
+                                loader = self._select_loader(source)
                                 
                                 if loader is None:
                                         raise UnsupportedFormatError(
@@ -73,4 +73,42 @@ class UnifiedLoader(BaseLoader):
                                 )
                  
                 
-        
+        def _select_loader(self, source:Union[str, Path]) -> Optional[BaseLoader]:
+                """
+                 Select the appropriate loader for the given source
+                """
+                
+                try:
+                        # Handle urls
+                        if isinstance(source, str) and source.startswith(('http://','https://')):
+                                return self.web_loader
+                        
+                        # Handle file paths
+                        source = Path(source) if isinstance(source, str) else source
+                        
+                        if not source.exists():
+                                return None
+                        
+                        # Get file Extension
+                        suffix = source.suffix.lower().strip('.')
+                        
+                        try:
+                                doc_type = DocumentType(suffix)
+                        except ValueError:
+                                return None
+                        
+                        # Route to appropriate loader
+                        if doc_type == DocumentType.PDF:
+                                return self.pdf_loader
+                        elif doc_type in [DocumentType.TXT, DocumentType.MD, DocumentType.HTML,
+                                          DocumentType.JSON, DocumentType.CSV, DocumentType.DOCX]:
+                                return self.document_loader
+                        else:
+                                return None
+                        
+                except Exception as e:
+                        self.logger.error(f"Error selecting leader for {source}: {e}")
+                        return None
+                
+         
+                                
