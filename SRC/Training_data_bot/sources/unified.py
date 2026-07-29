@@ -21,8 +21,24 @@ class UnifiedLoader(BaseLoader):
         """
         
         def __init__(self, decodo_client = None):
+                super().__init__()
+                self.logger = get_logger("loader.UnifiedLoader")
                 
+                #Initialize sub-loader (share DecodoClient with WebLoader)
+                self.document_loader = DocumentLoader()
+                self.pdf_loader = PDFLoader() 
                 
+                if decodo_client:
+                        #use shared DecodoClient instances for better resources management
+                        self.web_loader = WebLoader(use_decodo=True)
+                        self.web_loader.decodo_client = decodo_client
+                        self.web_loader.use_decodo = True
+                        self.logger.info("Unified Loader using shared Decodo Client")
+                else:
+                        self.web_loader = WebLoader()
+                
+                # All supported formats
+                self.supported_formats = list(DocumentLoader)
                 
                 
         
