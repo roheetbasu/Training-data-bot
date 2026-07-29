@@ -71,3 +71,10 @@ class BaseLoader(ABC):
             
             self.logger.info(f"Sucessfully loaded {len(documents)}")
             return documents
+    
+    async def load_stream(
+        self,
+        sources: Union[str, Path],
+        **kwargs
+    ):
+        
