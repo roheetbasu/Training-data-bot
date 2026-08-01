@@ -44,3 +44,21 @@ class WebLoader(BaseLoader):
                     content, extraction_method = await self._fetch_with_fallback(source)
         
         
+    async def _fetch_with_decodo(self, url: str, **kwargs):
+        """
+            Fetch content using Decodo  
+        """
+        
+        try:
+            self.logger.debug(f"Using Decodo professional Scrapping for {url}")
+            
+            # Set up Decodo parameters
+            scrape_params = {
+                "target": kwargs.get("target", "universal"),
+                "locale": kwargs.get("locale", "en-us"),
+                "geo" : kwargs.get("geo", "United States"),
+                "device_type" : kwargs.get("output_format", "html")
+            }
+            
+            # Call decodo api
+            result = await self.decodo_client.scrape_url(url, **scrape_params)
