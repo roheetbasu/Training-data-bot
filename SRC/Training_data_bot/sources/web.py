@@ -62,3 +62,30 @@ class WebLoader(BaseLoader):
             
             # Call decodo api
             result = await self.decodo_client.scrape_url(url, **scrape_params)
+            
+            #Extract content from Decodo response
+            if isinstance(result, dict):
+                if "content" in result:
+                    # Clean text content (already processed by Decodo)
+                    content = result['content']
+                    if content and len(content.strip()) > 0:
+                        self.logger.debug(f"Decodo Extracted {len(content)}")
+                        return content, "WebLoader.Decodo"
+                    
+                # if no content field try to extract from the raw html
+                if "html" in result or "data" in result:
+                    html = result.get("html") or result.get("data", "")
+                    if html:
+                        content = self._extract_html_text(html)
+                        self.logger.debug(f"Extracted {len(content)} characters")
+                        return content, "WebLoader.Decodo.HTML"
+                    
+
+            # If we get here, Decodo didn't return usable content
+            self.logger.warning(f"Decodo returned unusable content for {url}") 
+            return await self._fetch_with_fallback(url)
+        except Exception as e:
+            self.logger.warning(f"Decodo scraping failed for {url} : {e}") 
+            self.logger.info("Falling back to basic scraping")   
+            return await self._fetch_with_fallback(url)
+          
