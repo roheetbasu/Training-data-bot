@@ -22,9 +22,9 @@ class WebLoader(BaseLoader):
         if self.use_decodo:
             try:
                 self.decodo_client = DecodoClient()
-                self.logger.info("WebLoader initialized with Decodo profession")
+                self.logger.info("WebLoader initialized with Decodo Professional")
             except Exception as e:
-                self.logger.warning(f"Failed to intitalize Decodo Client: {e}")
+                self.logger.warning(f"Failed to initialize Decodo Client: {e}")
                 self.logger.info("WebLoader will use fallback scraping")
                 self.use_decodo = False
         
@@ -32,13 +32,13 @@ class WebLoader(BaseLoader):
         self,
         source,
         **kwargs
-    ):
+    ) -> Document:
         
       
         if not isinstance(source, str) or not source.startswith(("http://", "https://")):
             raise DocumentLoadError(f"Invalid URL: {source}")
         
-        with LogContext("load_url", url=source, method="decodo" if self.use_decodo else "fallback"):
+        async with LogContext("load_url", url=source, method="decodo" if self.use_decodo else "fallback"):
             try:
                 
                 if self.use_decodo and self.decodo_client:
@@ -66,7 +66,7 @@ class WebLoader(BaseLoader):
                     f"Failed to load URL: {source}",
                     file_path = source,
                     cause = e
-                )
+                ) from e
         
         
     async def _fetch_with_decodo(self, url: str, **kwargs):
@@ -75,14 +75,15 @@ class WebLoader(BaseLoader):
         """
         
         try:
-            self.logger.debug(f"Using Decodo professional Scrapping for {url}")
+            self.logger.debug(f"Using Decodo professional Scraping for {url}")
             
             # Set up Decodo parameters
             scrape_params = {
                 "target": kwargs.get("target", "universal"),
                 "locale": kwargs.get("locale", "en-us"),
                 "geo" : kwargs.get("geo", "United States"),
-                "device_type" : kwargs.get("output_format", "html")
+                "device_type" : kwargs.get("device_type", "desktop"),
+                "output_format" : kwargs.get("output_format", "html")
             }
             
             # Call decodo api
@@ -120,9 +121,11 @@ class WebLoader(BaseLoader):
         
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url, headers={
-                'User-Agent' :("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                "Chrome/138.0.0.0 Safari/537.36""Mozilla/5.0 (Macintosh; Intel Mac 05 X 10_15_7)")
+                                "User-Agent": (
+                                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                    "Chrome/138.0.0.0 Safari/537.36"
+                                )
             })
             response.raise_for_status()
             
@@ -250,7 +253,7 @@ class WebLoader(BaseLoader):
             if isinstance(result, Document):
                 documents.append(result)
                 
-        self.logger.info(f"Successfully loaded {len(documents)}")
+        self.logger.info(f"Successfully loaded {len(documents)} of {len(urls)} URLs")
         return documents
     
     async def close(self):
