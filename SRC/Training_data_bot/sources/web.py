@@ -222,5 +222,48 @@ class WebLoader(BaseLoader):
         else:
             return domain or url
         
+    async def load_multiple_urls(
+        self,
+        urls: list[str],
+        max_concurrent: int = 5,
+        ** kwargs
+    ):
+        """ 
+            Load multiple URLs concurrently 
+        """
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def load_with_semaphore(url: str):
+            async with semaphore:
+                try:
+                    return await self.load_single(url, **kwargs)
+                except Exception as e:
+                    self.logger.error(f"Failed to load {url} : {e}")
+                    return None
+                
+        tasks = [load_with_semaphore(url) for url in urls]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        #Filter out None results and exceptions
+        documents = []
+        for result in results:
+            if isinstance(result, Document):
+                documents.append(result)
+                
+        self.logger.info(f"Successfully loaded {len(documents)}")
+        return documents
+    
+    async def close(self):
+        """ clean up resources """
+        if self.decodo_client:
+            await self.decodo_client.close()
+            self.logger.debug("Decodo client closed")
+            
+    async def __aenter__(self):
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+        
         
     
