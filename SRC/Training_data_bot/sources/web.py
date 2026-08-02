@@ -1,3 +1,6 @@
+import asyncio
+import httpx
+
 from .base import BaseLoader
 from typing import Optional, Union
 from ..core.models import DocumentType, Document
@@ -42,6 +45,28 @@ class WebLoader(BaseLoader):
                     content, extraction_method = await self._fetch_with_decodo(source, **kwargs)
                 else:
                     content, extraction_method = await self._fetch_with_fallback(source)
+                
+                # Extract the title from the content
+                title = self._extract_title(source, content)
+                
+                document = self.create_document(
+                    title=title,
+                    content=content,
+                    source=source,
+                    doc_type=DocumentType.URL,
+                    extraction_method=extraction_method
+                )
+                
+                self.logger.info(f"Successfully loaded {len(content)} characters")
+                return document
+            
+            except Exception as e:
+                self.logger.error(f"Failed to load URL {source} : {e}")
+                raise DocumentLoadError(
+                    f"Failed to load URL: {source}",
+                    file_path = source,
+                    cause = e
+                )
         
         
     async def _fetch_with_decodo(self, url: str, **kwargs):
