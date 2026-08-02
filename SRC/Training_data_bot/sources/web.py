@@ -189,6 +189,38 @@ class WebLoader(BaseLoader):
             self.logger.warning(f"HTML extraction failed: {e}, returining raw HTML")
             return html
         
-    
+    def _extract_title(self, url: str, content: str):
+        """
+            Extract title from content   
+        """
+        try:
+            from bs4 import BeautifulSoup
+            
+            soup = BeautifulSoup(content, 'html.parser')
+            title_tag = soup.find('title')
+            if title_tag and title_tag.text.strip():
+                title = title_tag.text.strip()
+                
+                # clean up title
+                if len(title) > 100:
+                    title = title[:97] +"..."
+                    
+                return title
+        except ImportError:
+            pass
+        except Exception:
+            pass
+        
+        # Fall back: create title from URL
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        domain = parsed.netloc.replace('www.', '')
+        path = parsed.path.strip('/').replace('/', '-')
+        
+        if path:
+            return f"{domain}: {path}"
+        else:
+            return domain or url
+        
         
     
