@@ -168,4 +168,25 @@ class BaseLoader(ABC):
         
         return metadata
                 
-    
+    def create_document(
+        self,
+        title: str,
+        content: str,
+        source: Union[str, Path],
+        doc_type: DocumentType,
+        **kwargs
+    ) -> Document:
+        """ create a document with standard metadata """
+        
+        metadata = self.extract_metadata(source)
+        metadata.update(kwargs.get("metadata", {}))
+        
+        return Document(
+            title= title,
+            content= content,
+            source = str(source),
+            doc_type = doc_type,
+            size=len(content.encode('utf-8')),
+            metadata= metadata,
+            **{k: v for k,v in kwargs.items() if k != "metadata"}
+        )
