@@ -108,8 +108,32 @@ class DocumentLoader(BaseLoader):
             except ImportError:
                 # Fallback if BeautifulSoup not available
                 return path.read_text(encoding=encoding)
+        return await asyncio.to_thread(_extract_html_text)
+    
+    async def _load_json(self, path, encoding):
         
-                
+        def _extract_json_text():
+
+            with open(path, 'r', encoding=encoding) as f:
+                data = json.load(f)
+            
+            # convert JSON to readable test
+            if isinstance(data, dict):
+                lines = []
+                for key, value in data.items():
+                    lines.append(f"{key}: {value}")
+                return "\n".join(lines)
+            elif isinstance(data, list):
+                lines = []
+                for i, item in enumerate(data):
+                    lines.append(f'Item {i+1}: {item}')
+                return "\n".join(lines)
+            else:
+                return str(data)
+            
+        return await asyncio.to_thread(_extract_json_text)
+        
+            
                 
                 
         
