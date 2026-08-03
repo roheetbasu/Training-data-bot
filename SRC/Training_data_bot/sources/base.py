@@ -143,5 +143,29 @@ class BaseLoader(ABC):
             supported_formats = [fmt.value for fmt in self.supported_formats]
         )
     
-    
+    def extract_metadata(self, source: Union[str, Path]) -> Dict[str, Any]:
+        """ Extract meta data from the path """
+        metadata = {}
+        
+        if isinstance(source, str):
+            metadata["source"] = source
+            if source.startswith (("https://, http://")):
+                metadata["source_type"] = "url"
+            else:
+                metadata["source_type"] = "file"
+                source = Path(source)
+                
+        if isinstance (source, Path):
+            metadata['source'] = str(source.absolute())
+            metadata['source_type'] = "file"
+            metadata['filename'] = source.name
+            metadata['extension'] = source.suffix   
+            
+            if source.exists():
+                stat = source.stat()
+                metadata['size'] = stat.st_size
+                metadata['modified_time'] = stat.st_mtime
+        
+        return metadata
+                
     
