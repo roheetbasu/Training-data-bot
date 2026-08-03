@@ -72,6 +72,37 @@ class UnifiedLoader(BaseLoader):
                                         cause=e
                                 )
                  
+        async def load_directory(
+                self,
+                directory: Union[str, Path],
+                recursive: bool = True,
+                file_patterns: Optional[List[str]] = None,
+                **kwargs
+        ) -> List[Document]:
+                """
+                        Load all the supported documents  
+                """
+                directory = Path(directory)
+                
+                if not directory.exists() or not directory.is_dir():
+                        raise DocumentLoadError(f"Directory not found: {directory}")
+                
+                #Find all supported files
+                sources = self._find_supported_files(
+                        directory,
+                        recursive = recursive,
+                        patterns = file_patterns
+                )
+                
+                if not sources:
+                        self.logger.warning(f"No supported files found in {directory}")
+                        return []
+                self.logger.info(f"Found {len(sources)} supported files")
+                
+                # Load all files
+                return await self.load_multiple(sources, **kwargs)
+                
+                
                 
         def _select_loader(self, source:Union[str, Path]) -> Optional[BaseLoader]:
                 """
