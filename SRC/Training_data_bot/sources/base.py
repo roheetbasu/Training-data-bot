@@ -74,7 +74,74 @@ class BaseLoader(ABC):
     
     async def load_stream(
         self,
-        sources: Union[str, Path],
+        sources: List[Union[str, Path]],
         **kwargs
     ):
+        """
+            Load documents as a stream (generator).   
+        """
         
+        for source in sources:
+            try:
+                document = await self.load_single(source, **kwargs)
+                yield document
+            except Exception as e:
+                self.logger.error(f"Failed to load {source}: {e}")
+                continue
+    
+    def supports_format(self, doc_type: DocumentType) -> bool:
+        """ Check if loader suuport the given format"""
+        return doc_type in self.supported_formats
+        
+    def validate_source(self, source: Union[str, Path]) -> bool:
+        """ Validate if source can be loaded by this loader"""
+        try:
+            if isinstance(source, str):
+                if source.startswith(("http://","https://")):
+                    # URL 
+                    return DocumentType.URL in self.supported_formats
+                else:
+                    source = Path(source)
+                    
+                if isinstance(source, Path):
+                    if not source.exists():
+                        return False
+                    
+                    # check suffix of the file extension
+                    suffix = source.suffix.lower().strip('.')
+                    try:
+                        doc_type = DocumentType(suffix)
+                        return self.supports_format(doc_type)
+                    except ValueError:
+                        return False
+                
+                return True
+            
+        except Exception:
+            return False
+        
+    def get_document_type(self, source: Union[str, Path]) -> DocumentType:
+        """ Determine document type from source """
+        
+        if isinstance(source, str):
+            if source.startswith(('http://', "https://")):
+                return DocumentType.URL
+            else:
+                source = Path(source)
+                
+        if isinstance(source, Path):
+            suffix= source.suffix.lower().strip('.')
+            try:
+                return DocumentType(suffix)
+            except ValueError:
+                raise UnsupportedFormatError(
+                    file_format = suffix,
+                    supported_formats = [fmt.value for fmt in self.supported_formats]
+                )
+        raise UnsupportedFormatError(
+            file_format="unknown",
+            supported_formats = [fmt.value for fmt in self.supported_formats]
+        )
+    
+    
+    
