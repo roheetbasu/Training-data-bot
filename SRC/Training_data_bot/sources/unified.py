@@ -142,4 +142,51 @@ class UnifiedLoader(BaseLoader):
                         return None
                 
          
+        def _find_supported_files(
+                self,
+                directory: Path,
+                recursive: bool = True,
+                patterns: Optional[List[str]] = None
+        ):
+                """
+                        Find all supported files in the directory  
+                """
+                supported_files = []
+                
+                #Build supported extensions
+                supported_extensions = {
+                        f".{doc_type.value.lower()}"
+                        for doc_type in DocumentType
+                        if doc_type != DocumentType.URL
+                }
+                
+                #If user didn't specify patterns 
+                if patterns is None:
+                        patterns = ["*"]
+                
+                for pattern in patterns: 
+                        
+                        iterator = (
+                                directory.rglob(pattern)
+                                if recursive
+                                else directory.glob(pattern)
+                        )
+                        
+                        for path in iterator:
                                 
+                                if not path.is_file():
+                                        continue
+                                if path.suffix.lower() in supported_extensions:
+                                        supported_files.append(path)
+                                
+                # Remove duplicates
+                seen = set()
+                unique_files = []
+                
+                for path in supported_files:
+                        if path not in seen:
+                                seen.add(path)
+                                unique_files.append(path)
+                
+                return unique_files
+                        
