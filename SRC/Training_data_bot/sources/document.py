@@ -133,7 +133,33 @@ class DocumentLoader(BaseLoader):
             
         return await asyncio.to_thread(_extract_json_text)
         
+    async def _load_csv(self, path, encoding) -> str:
+        
+        def _extract_csv():
             
+            with open(path, 'r', encoding=encoding) as f:
+                reader = csv.reader(f)
+                headers = next(reader, None)
+                lines = []    
+                if headers:
+                    lines.append("Headers: " + ", ".join(headers))
+                    lines.append("")
+                
+                for row_num, row in enumerate(reader, 1):
+                    if headers and len(row) == len(headers):
+                        row_data = []
+                        for header, value in zip(headers, row):
+                            row_data.append(f'{header}: {value}')
+                        lines.append(f"Row (row_num): {' | '.join(row_data)}")
+                    else:
+                        self.logger.warning(
+                            f"Skipping malformed row {row_num}: {row}"
+                        )
+            
+            return "\n".join(lines)
+        
+        return await asyncio.to_thread(_extract_csv)
+     
                 
                 
         
