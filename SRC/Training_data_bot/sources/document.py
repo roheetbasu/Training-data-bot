@@ -135,7 +135,7 @@ class DocumentLoader(BaseLoader):
         
     async def _load_csv(self, path, encoding) -> str:
         
-        def _extract_csv():
+        def _extract_csv_text():
             
             with open(path, 'r', encoding=encoding) as f:
                 reader = csv.reader(f)
@@ -158,8 +158,26 @@ class DocumentLoader(BaseLoader):
             
             return "\n".join(lines)
         
-        return await asyncio.to_thread(_extract_csv)
-     
+        return await asyncio.to_thread(_extract_csv_text)
+    
+    async def _load_docx(self, path):
+        
+        def _extract_docx_text():
+            try: 
+                from docx import Document 
                 
+                doc = Document(path)
+                text_parts = []
+                
+                for paragraph in doc.paragraphs:
+                    if paragraph.text.strip():
+                        text_parts.append(paragraph.text)
+                
+                return "\n ".join(text_parts)
+            except ImportError:
+                raise DocumentLoadError(
+                    'python-docx package required for DOCX files'
+                )
+        return await asyncio.to_thread(_extract_docx_text)
                 
         
