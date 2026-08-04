@@ -173,7 +173,7 @@ class DocumentLoader(BaseLoader):
                     if paragraph.text.strip():
                         text_parts.append(paragraph.text)
                 
-                return "\n ".join(text_parts)
+                return "\n".join(text_parts)
             except ImportError:
                 raise DocumentLoadError(
                     'python-docx package required for DOCX files'
