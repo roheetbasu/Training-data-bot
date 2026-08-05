@@ -122,6 +122,7 @@ class TextChunk(BaseEntity):
 class TaskTemplate(BaseEntity):
 
     name: str
+    task_type: TaskType
     description: str
     prompt_template: str
     
@@ -141,13 +142,13 @@ class TaskResult(BaseEntity):
     """Result of Task Execution"""
     task_id: UUID
     template_id: UUID
-    input_chunk: UUID
+    input_chunk_id: UUID
     
     #output
     output: str
     confidence: Optional[float] = None
     
-    #quality_scores
+    # #quality_scores
     quality_scores: Dict[QualityMetric, float] = Field(default_factory=dict)
     
     #processing info
