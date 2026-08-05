@@ -51,4 +51,26 @@ class PDFLoader(BaseLoader):
                     cause = e
                 )
     
-    
+    async def _extract_pdf_text(self, path: Path) -> str:
+        """ Extract text from PDF using PyMuPDF """
+        def _extract_text():
+            try:
+                import fitz
+                
+                with fitz.open(path) as doc:
+                    text_parts = []
+                    
+                    for page_num in range(doc.page_count):
+                        page = doc[page_num]
+                        text = page.get_text()
+                        if text.strip():
+                            text_parts.append(f"Page {page_num + 1}:\n{text}")
+                    
+                    return "\n\n".join(text_parts)
+            
+            except ImportError:
+                raise DocumentLoadError(
+                    "PyMuPDF package is required for PDF files. Install with: pip install PyMuPDF"
+                )
+                
+        return await asyncio.to_thread(_extract_text)
