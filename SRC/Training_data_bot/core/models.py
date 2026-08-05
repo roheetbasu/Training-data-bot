@@ -119,7 +119,7 @@ class TextChunk(BaseEntity):
         return v
  
 # Task Model       
-class TextTemplate(BaseEntity):
+class TaskTemplate(BaseEntity):
 
     name: str
     description: str
@@ -158,14 +158,6 @@ class TaskResult(BaseEntity):
     #status
     status: ProcessingStatus = ProcessingStatus.PENDING
     error_message: Optional[str] = None
-
-# TEmplate of task
-class TaskTemplate(BaseEntity):
-    name: str
-    task_type: TaskType
-    description: str
-    prompt_template: str
-    parameters: dict
     
 #Training Data Models
 class TrainingExample(BaseEntity):
