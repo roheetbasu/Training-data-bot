@@ -69,7 +69,7 @@ class TaskManager:
                 # Return failed result
                 return TaskResult(
                     task_id = uuid4(),
-                    template_id=template.id if "template" in locals() else None,,
+                    template_id=template.id if "template" in locals() else None,
                     input_chunk_id=input_chunk.id,
                     output = "",
                     status=ProcessingStatus.FAILED,
@@ -126,8 +126,7 @@ class TaskManager:
     def _get_default_template(self, task_type: TaskType):
         """ Get the default template for task type """
         # Find first template of the given type
-        for template in self.templates.values():
-            
+        for template in self.templates.values():     
             if template.task_type == task_type:
                 return template
             
@@ -168,3 +167,14 @@ class TaskManager:
         self.templates[template.id] = template
 
         return template
+    
+    if __name__ == "__main__":
+        template = TaskTemplate(
+        name="Test",
+        task_type=TaskType.QA_GENERATION,
+        description="test",
+        prompt_template="Hello {{ text }}"
+    )
+
+        print(template)
+        print(template.id)

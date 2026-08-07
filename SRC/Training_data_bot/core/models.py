@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, root_validator
+from pydantic import BaseModel, Field, validator, root_validator
 
 class BaseEntity(BaseModel):
     """ Base class for all entities with common fields"""
@@ -14,7 +14,7 @@ class BaseEntity(BaseModel):
     updated_at: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict) 
     
-    class config:
+    class Config:
         use_enum_values = True
         allow_population_by_field_name = True
         arbitary_types_allowed = True
@@ -81,13 +81,13 @@ class Document(BaseEntity):
     extraction_method: Optional[str] = None
     processing_time: Optional[float] = None
     
-    @field_validator("word_count", pre=True, always=True)
+    @validator("word_count", pre=True, always=True)
     def calculate_word_count(cls, v ,values):
         if v == 0 and "content" in values:
             return len(values["content"].split())
         return v
     
-    @field_validator("char_count", pre=True, always=True)
+    @validator("char_count", pre=True, always=True)
     def calculate_char_count(cls, v ,values):
         if v == 0 and "content" in values:
             return len(values["content"])
@@ -111,7 +111,7 @@ class TextChunk(BaseEntity):
     embeddings: Optional[List[float]] = None
     topics: List[str] = Field(default_factory=list)
     
-    @field_validator ("token_count", pre=True, always=True)
+    @validator ("token_count", pre=True, always=True)
     def estimate_token_count(cls, v, values):
         if v == 0 and "content" in values:
             # Rough estimation: 1 token nearly equal to 4 character
@@ -208,7 +208,7 @@ class Dataset(BaseEntity):
     exported_at: Optional[datetime] = None
     export_path: Optional[Path] = None
     
-    @field_validator("total_examples", pre=True, always=True)
+    @validator("total_examples", pre=True, always=True)
     def calculate_total_examples(cls, v, values):
         if "examples" in values:
             return len(values["examples"])
@@ -340,7 +340,7 @@ class FileInfo(BaseModel):
     file_type: DocumentType
     encoding: Optional[str] = None
     
-    @field_validator("name", pre= True, always=True)
+    @validator("name", pre= True, always=True)
     def extract_name(cls, v, values):
         if not v and "path" in values:
             return values["Path"].name
@@ -355,9 +355,11 @@ class ProgressInfo(BaseModel):
     percentage: float = 0.0
     eta: Optional[datetime] = None
     
-    @field_validator("percentage", pre=True, always=True)
+    @validator("percentage", pre=True, always=True)
     def calculate_percentage(cls, v,values):
         if values.get("total", 0) > 0:
             return (values.get("current", 0) / values["total"])
         return 0.0
          
+        
+        
