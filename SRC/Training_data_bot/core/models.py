@@ -361,5 +361,3 @@ class ProgressInfo(BaseModel):
             return (values.get("current", 0) / values["total"])
         return 0.0
          
-        
-        
