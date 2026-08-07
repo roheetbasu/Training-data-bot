@@ -36,9 +36,6 @@ class TaskType(str, Enum):
     QA_GENERATION = "qa_generation"
     CLASSIFICATION = "classification"
     SUMMARIZATION = "summarization"
-    NER = "named_entity_recognition"
-    RED_TEAMING = "red_teaming"
-    INSTRUCTION_RESPONSE = "instruction_response"
     
 class QualityMetric(str, Enum):
     """ Quality assessment metrics"""
