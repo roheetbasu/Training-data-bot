@@ -39,5 +39,18 @@ class SimpleConfig:
         #Monitoring
         self.monitoring = self._create_monitoring_config()
         
-    
+    def _create_decodo_config(self):
+        """ Create Decodo Config """
+        class DecodoConfig:
+            api_key = os.getenv("DECODO_API_KEY", "mock_api_key")
+            base_url = os.getenv("DECODO_BASE_URL", "https://api.decodo.com")
+            user_id = os.getenv("DECODO_USER_ID")
+            basic_auth = os.getenv("DECODO_BASIC_AUTH")
+            timeout = int(os.getenv("DECODO_TIMEOUT", "60"))
+            max_retries = int(os.getenv("DECODO_MAX_RETRIES","3"))
+            rate_limit = int(os.getenv("DECODO_RATE_LIMIT", "10"))
+            back_off = 2.0
+            retry_status_codes = [429, 502, 503, 504]
 
+        return DecodoConfig
+    
