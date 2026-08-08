@@ -100,7 +100,7 @@ class SimpleConfig:
     def _create_dashboard_config(self):
         """ create dashboard configuration """
         class DashboardConfig:
-            host = os.getenv("DASHBOARD_HOST", "localhost")
+            host = os.getenv("DASHBOARD", "localhost")
             port = int(os.getenv("DASHBOARD_PORT", "8501"))
             debug = os.getenv("DASHBOARD_DEBUG", "false").lower() == "true"
             title = " Training Data Curation Dashboard"
@@ -113,11 +113,22 @@ class SimpleConfig:
             secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
             encrypt_credentials = os.getenv("ENCRYPT_CREDENTIALS", "true").lower() == "true"
             enable_rate_limiting = True
-            track_token_usage = True
-            track_processing_time = True
+            audit_logging = True
             
         return SecurityConfig
     
+    def _create_monitoring_config(self):
+        """ Create monitoring config """
+        class MonitoringConfig:
+            enable_metrics = os.getenv("ENABLE-METRICS", "true").lower() == "true"
+            metrics_port = int(os.getenv("METRICS_PORT", "8080"))
+            enable_health_check = os.getenv("ENABLE_HEALTH_CHECK", "true").lower() == "true"
+            track_token_usage = True
+            track_processing_time = True
+            
+        return MonitoringConfig
+    
+            
     
     
         
