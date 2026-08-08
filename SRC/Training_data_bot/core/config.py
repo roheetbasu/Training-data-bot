@@ -49,7 +49,7 @@ class SimpleConfig:
             timeout = int(os.getenv("DECODO_TIMEOUT", "60"))
             max_retries = int(os.getenv("DECODO_MAX_RETRIES","3"))
             rate_limit = int(os.getenv("DECODO_RATE_LIMIT", "10"))
-            back_off = 2.0
+            backoff_factor = 2.0
             retry_status_codes = [429, 502, 503, 504]
 
         return DecodoConfig
@@ -100,12 +100,24 @@ class SimpleConfig:
     def _create_dashboard_config(self):
         """ create dashboard configuration """
         class DashboardConfig:
-            host = os.getenv("DASHBOARD", "localhost")
+            host = os.getenv("DASHBOARD_HOST", "localhost")
             port = int(os.getenv("DASHBOARD_PORT", "8501"))
             debug = os.getenv("DASHBOARD_DEBUG", "false").lower() == "true"
-            title = " Training Data Curation Dashboard "
+            title = " Training Data Curation Dashboard"
             
         return DashboardConfig
+    
+    def _create_security_config(self):
+        """ create security config """
+        class SecurityConfig:
+            secret_key = os.getenv("SECRET_KEY", "dev_secret_key")
+            encrypt_credentials = os.getenv("ENCRYPT_CREDENTIALS", "true").lower() == "true"
+            enable_rate_limiting = True
+            track_token_usage = True
+            track_processing_time = True
+            
+        return SecurityConfig
+    
     
     
         
