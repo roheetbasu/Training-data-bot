@@ -85,5 +85,27 @@ class SimpleConfig:
         config.__post_init__()
         return config
     
+    def _create_quality_config(self):
+        """ create quality configuration. """
+        class QualityConfig:
+            toxicity_threshold = float(os.getenv("TOXICITY_THRESHOLD", "0.0"))
+            bias_threshold = float(os.getenv("BIAS_THRESHOLD", "0.7"))
+            min_text_length = int(os.getenv("MIN_TEXT_LENGTH", "10"))
+            max_text_length = int(os.getenv("MAX_TEXT_LENGTH", "5000"))
+            similarity_threshold = float(os.getenv("SIMILARITY_THRESHOLD", "0.85"))
+            diversity_threshold = 0.6
+        
+        return QualityConfig
+    
+    def _create_dashboard_config(self):
+        """ create dashboard configuration """
+        class DashboardConfig:
+            host = os.getenv("DASHBOARD", "localhost")
+            port = int(os.getenv("DASHBOARD_PORT", "8501"))
+            debug = os.getenv("DASHBOARD_DEBUG", "false").lower() == "true"
+            title = " Training Data Curation Dashboard "
+            
+        return DashboardConfig
+    
     
         
