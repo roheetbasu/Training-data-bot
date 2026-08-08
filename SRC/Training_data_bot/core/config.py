@@ -54,3 +54,36 @@ class SimpleConfig:
 
         return DecodoConfig
     
+    def _create_processing_config(self):
+        """ create processing configuration """
+        class ProcessingConfig:
+            max_workers = int(os.getenv("MAX_WORKERS", "4"))
+            chunk_size = int(os.getenv("CHUNK_SIZE", "1000"))
+            chunk_overlap = int(os.getenv("CHUNK_OVERLAP", "200"))
+            batch_size = int(os.getenv("BATCH_SIZE", "10"))
+            async_batch_size = 5
+            connection_pool_size = 10
+            
+        return ProcessingConfig
+            
+    def _create_storage_config(self):
+        """ create storage configuration """
+        class StorageConfig:
+            data_dir = Path(os.getenv("DATA_DIR", "./data"))
+            output_dir = Path(os.getenv("OUTPUT_DIR", "./outputs"))
+            cache_dir = Path(os.getenv("CACHE_DIR", './cache'))
+            temp_dir = Path(os.getenv("TEMP_DIR", './temp'))
+            database_dir = os.getenv("DATABASE_DIR", "sqlite:///./data/training_bot")
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            
+            def __post_init__(self):
+                #create directories
+                for dir_path in [self.data_dir, self.output_dir,self.cache_dir,self.temp_dir]:
+                    dir_path.mkdir(parents=True, exist_ok=True)
+        
+        config = StorageConfig()
+        config.__post_init__()
+        return config
+    
+    
+        
