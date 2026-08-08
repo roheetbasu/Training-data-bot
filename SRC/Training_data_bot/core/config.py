@@ -128,7 +128,30 @@ class SimpleConfig:
             
         return MonitoringConfig
     
-            
+    @property
+    def is_production(self) -> bool:
+        """ Check if running in production environment """
+        return self.environment.lower() == "production"
+    
+    @property
+    def is_development(self) -> bool:
+        """ check if running in development environment """
+        return self.environment.lower() == "development"
+    
+@lru_cache
+def get_settings() ->SimpleConfig:
+    """ Get cached settings instance """
+    return SimpleConfig()
+
+# Global setting instance
+settings = get_settings()
+
+def reload_settings() -> SimpleConfig:
+    """ Reload settings (useful for testing) """
+    get_settings.cache_clear()
+    global settings
+    settings = get_settings()
+    return settings
     
     
         
