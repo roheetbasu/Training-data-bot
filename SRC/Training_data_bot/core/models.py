@@ -282,7 +282,7 @@ class ProcessingJob(BaseEntity):
     
     #Process tracking
     total_items: int = 0
-    processsed_items: int = 0
+    processed_items: int = 0
     failed_items: int = 0
     
     # Timing

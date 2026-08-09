@@ -76,7 +76,7 @@ class TrainingDataBot:
         sources: Union[str, Path, List[Union[str, Path]]],
         doc_types: Optional[List[DocumentType]] = None,
         **kwargs
-                )-> Document:
+                )-> List[Document]:
         
         with LogContext("documents_loading", sources=str(sources)):
             try:
@@ -134,7 +134,7 @@ class TrainingDataBot:
                     total_items=len(documents) * len(task_types),
                     input_data={
                         "document_count": len(documents),
-                        "task_types": [t.values for t in task_types],
+                        "task_types": [t.value for t in task_types],
                         "quality_filter": quality_filter
                     }   
                 )
