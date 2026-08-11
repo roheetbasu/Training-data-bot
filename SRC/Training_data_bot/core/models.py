@@ -150,7 +150,7 @@ class TaskResult(BaseEntity):
     
     #processing info
     processing_time: float
-    token_usages: int = 0
+    token_usage: int = 0
     cost: Optional[float] = None
     
     #status
@@ -300,7 +300,7 @@ class ProcessingJob(BaseEntity):
         """ calculate progress percentage """
         if self.total_items == 0:
             return 0.0
-        return (self.processsed_items/self.total_items)
+        return (self.processed_items/self.total_items)
     
        
 # Configuration Models
