@@ -138,7 +138,7 @@ class TaskTemplate(BaseEntity):
 class TaskResult(BaseEntity):
     """Result of Task Execution"""
     task_id: UUID
-    template_id: UUID
+    template_id: Optional[UUID]
     input_chunk_id: UUID
     
     #output

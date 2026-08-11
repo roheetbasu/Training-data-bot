@@ -33,11 +33,12 @@ class TaskManager:
         task_type: TaskType,
         input_chunk: TextChunk,
         client,
-        template_id: Optional[UUID] =None   
-    ) -> TaskResult :
+        template_id: Optional[UUID] = None
+    ) -> TaskResult:
         """ Execute a task on given text """
         with LogContext("execute_task", task_type=task_type.value):
             start_time = time.perf_counter()
+            template = None  # ensure defined even if lookup fails/raises
             try:
                 # Get Template
                 if template_id:
@@ -46,37 +47,38 @@ class TaskManager:
                         raise TemplateError(f"Template not found: {template_id}")
                 else:
                     template = self._get_default_template(task_type)
-                        
-                # get appropriate generetor
+                    if not template:
+                        raise TemplateError(f"No default template for task type: {task_type}")
+
+                # get appropriate generator
                 generator = self.generators.get(task_type)
-                
+
                 if not generator:
                     raise TaskError(f"No generator found for task type: {task_type}")
-                        
-                #Execute task
+
+                # Execute task
                 result = await generator.execute(
                     template=template,
                     input_chunk=input_chunk,
                     client=client
                 )
-                        
+
                 self.logger.debug(f"Successfully executed {task_type.value} for chunk {input_chunk.id}")
                 return result
-                    
+
             except Exception as e:
                 self.logger.error(f"Task {task_type.value} failed: {e}")
-                
+
                 # Return failed result
                 return TaskResult(
-                    task_id = uuid4(),
-                    template_id=template_id or template.id,
+                    task_id=uuid4(),
+                    template_id=template_id or (template.id if template else None),
                     input_chunk_id=input_chunk.id,
-                    output = "",
+                    output="",
                     status=ProcessingStatus.FAILED,
                     error_message=str(e),
-                    processing_time=time.perf_counter() - start_time                    
+                    processing_time=time.perf_counter() - start_time
                 )
-                    
                         
     def _load_default_templates(self):
         """Load default templates."""
