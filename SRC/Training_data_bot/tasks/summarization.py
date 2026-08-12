@@ -41,4 +41,15 @@ class SummarizationGenerator(BaseTaskGenerator):
                 status = ProcessingStatus.COMPLETED
             )
             
-        
+        except Exception as e:
+            processing_time = time.time() - start_time
+            
+            return TaskResult(
+                task_id = uuid4(),
+                template_id = template.id,
+                input_chunk_id = input_chunk.id,
+                output = "",
+                processing_time=processing_time,
+                status = ProcessingStatus.FAILED,
+                error_message = str(e), 
+            )
