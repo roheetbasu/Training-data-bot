@@ -54,3 +54,5 @@ class ClassficationGenerator(BaseTaskGenerator):
                 status=ProcessingStatus.FAILED,
                 error_message=str(e)
             )
+            
+            
