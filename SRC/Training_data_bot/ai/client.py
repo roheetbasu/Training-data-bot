@@ -85,3 +85,51 @@ class AIClient:
                 cost=response.get("cost"),
                 processing_time=response.get("processing_time")
             )
+        
+    
+    async def _call_openai(self, request: DecodoResponse) -> Dict[str, Any]:
+        """ Call OpenAI API for text generation. """
+        import time
+        start_time = time.time()
+        
+        headers ={
+            "Authorization": f"Bearer {self.openai_api_key}",
+            "Content_type" : "application/json"
+        }
+        
+        # Build prompt based on task type
+        system_prompt = self._build_system_prompt(request.task_type)
+        user_prompt = f"{request.prompt}\n\n Text: {request.input_text}"
+        
+        payload = {
+            "model" : "gpt-3.5-turbo",
+            "messages" : [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "max_tokens" : request.parameters.get("max_tokens", 1000)
+            temperature : request.parameters.get("temperature", 0.7)
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30.0
+            )
+            
+            response.raise_for_status()
+            
+            data = response.json()
+            output = data["choices"][0]["message"]["content"]
+            token_usage = data.get("usage", {}).get("total_token", 0)
+            
+            return {
+                "output" : output,
+                "confidence" : 0.9,
+                "token_usage" : token_usage,
+                "cost" : token_usage * 0.002/ 1000, # Rough estimate
+                "processing_time" : time.time() - start_time 
+            } 
+            
