@@ -107,8 +107,8 @@ class AIClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "max_tokens" : request.parameters.get("max_tokens", 1000)
-            temperature : request.parameters.get("temperature", 0.7)
+            "max_tokens" : request.parameters.get("max_tokens", 1000),
+            "temperature" : request.parameters.get("temperature", 0.7)
         }
         
         async with httpx.AsyncClient() as client:
@@ -133,3 +133,51 @@ class AIClient:
                 "processing_time" : time.time() - start_time 
             } 
             
+    async def _call_anthropic(self, request: DecodoRequest) -> Dict[str, Any]:
+        """ Call Anthropic Api for text generation """
+        import time
+        start_time = time.time()
+    
+        headers ={
+            "x-api-key": f"Bearer {self.anthropic_api_key}",
+            "Content_type" : "application/json",
+            "anthropic-version" : 
+        }
+        
+        # Build prompt based on task type
+        system_prompt = self._build_system_prompt(request.task_type)
+        user_prompt = f"{request.prompt}\n\n Text: {request.input_text}"
+        
+        payload = {
+            "model" : "claude-3-haiku-20240307",
+            "max_tokens" : request.parameters.get("max_tokens", 1000),
+            "system" : system_prompt,
+            "messages" : [
+                {"role": "user", "content": user_prompt}
+            ],
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers=headers,
+                json=payload,
+                timeout=30.0
+            )
+            
+            response.raise_for_status()
+            
+            data = response.json()
+            output = data["content"][0]["text"]
+            token_usage = data.get("usage", {}).get("total_token", 0)
+            
+            return {
+                "output" : output,
+                "confidence" : 0.9,
+                "token_usage" : token_usage,
+                "cost" : token_usage * 0.002/ 1000, # Rough estimate
+                "processing_time" : time.time() - start_time 
+            }     
+    
+    
+    
