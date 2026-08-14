@@ -190,3 +190,40 @@ class AIClient:
         else:
             return "You are a helpful AI assistant that processes text according to the given instructions."
     
+    async def simulate_ai_call(self, request):
+        """ Simulate when real ai is not available  """
+        if request.task_type == TaskType.QA_GENERATION:
+            return {"output" : self._generate_mock_qa(request.input_text)}
+        elif request.task_type == TaskType.CLASSIFICATION:
+            return {"output" : self._generate_mock_classificaton(request.input_text)}
+        elif request.task_type == TaskType.SUMMARIZATION:
+            return {"output" : self._generate_mock_summary(request.input_text)}
+        
+        return {"output" : "Simulated AI response", "confidence": 0.7}
+    
+    def _generate_mock_qa(self, text):
+        """ Generate Realistics Q&A for testing """
+        return f"""Q: What is the main topic of this test?
+    A:{text[:100]} 
+    
+    Q: What are the key points mentioned?
+    A: The text discusses several important concepts related to the subject matters."""
+
+    def _generate_mock_classification(self, text):
+        """ Generate realistics classification """
+        if "science" in text.lower():
+            return "Science"
+        elif "history" in text.lower():
+            return "History"
+        else:
+            return "General"    
+    
+    def _generate_mock_summary(self, text):
+        """Generate realistic summary for testing."""
+        if len(text) <= 200:
+            return f"Summary: {text}"
+
+        return (
+            f"Summary: The text discusses the following topic: "
+            f"{text[:200]}..."
+        )
