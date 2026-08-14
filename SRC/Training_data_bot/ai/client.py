@@ -34,7 +34,8 @@ class AIClient:
         stop = stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10)
     )
-    @long_api_call("ai")
+    
+    @log_api_call("ai")
     async def process_text(
         self,
         prompt: str,
@@ -98,7 +99,7 @@ class AIClient:
         }
         
         # Build prompt based on task type
-        system_prompt = self._build_system_prompt(request.task_type)
+        system_prompt = self._build_system_prompt(request.task_type),
         user_prompt = f"{request.prompt}\n\n Text: {request.input_text}"
         
         payload = {
@@ -190,12 +191,12 @@ class AIClient:
         else:
             return "You are a helpful AI assistant that processes text according to the given instructions."
     
-    async def simulate_ai_call(self, request):
+    async def _simulate_ai_call(self, request):
         """ Simulate when real ai is not available  """
         if request.task_type == TaskType.QA_GENERATION:
             return {"output" : self._generate_mock_qa(request.input_text)}
         elif request.task_type == TaskType.CLASSIFICATION:
-            return {"output" : self._generate_mock_classificaton(request.input_text)}
+            return {"output" : self._generate_mock_classification(request.input_text)}
         elif request.task_type == TaskType.SUMMARIZATION:
             return {"output" : self._generate_mock_summary(request.input_text)}
         
