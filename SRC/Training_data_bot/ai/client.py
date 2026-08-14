@@ -178,6 +178,15 @@ class AIClient:
                 "cost" : token_usage * 0.002/ 1000, # Rough estimate
                 "processing_time" : time.time() - start_time 
             }     
-    
-    
+        
+    def _build_system_prompt(self, task_type: Optional[TaskType]) -> str:
+        """ Build system prompt based on task type. """
+        if task_type == TaskType.QA_GENERATION:
+            return "You are an expert at creating high-quality question-answer pairs from that content. Generate relevant, clear and accurate questions with answer based only on the provided text"
+        elif task_type == TaskType.CLASSIFICATION:
+            return "You are an expert at text classification. Analyze the given text and provide accurate classification result based on its content"
+        elif task_type == TaskType.SUMMARIZATION:
+            return "You are an expert at text summarization. Create concise, accurate summaries that capture the key point and important information without adding unnecessary information"
+        else:
+            return "You are a helpful AI assistant that processes text according to the given instructions."
     
