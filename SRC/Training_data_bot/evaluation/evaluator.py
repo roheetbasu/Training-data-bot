@@ -56,3 +56,37 @@ class QualityEvaluator:
             issues=[] if passed else ["Dataset quality score too low"],
             warning = []  
         )
+    
+    def _check_toxicity(self, example):
+        """ check for harmful or inappropriate content """
+        
+        content = example.input_text  + " " + example.output_text
+        
+        # check for toxic keywords
+        toxic_keywords = ["hate", "violence", "discrimination", "harassment"]
+        toxicity_score = 0.0
+        
+        for keyword in toxic_keywords:
+            if keyword in content.lower():
+                toxicity_score += 0.1
+            
+        # Lower score is better (less toxicity)
+        return max(0.0, 1.0-toxicity_score)
+    
+    def _check_bias(self, example):
+        """ Check for unfair bias in content """
+        
+        content = example.input_text + " " + example.output_text
+        
+        # check for biased language
+        bias_indicators = ["always", "never", "all people", "everyone"]
+        bias_score = 0.0
+        
+        for indicator in bias_indicators:
+            if indicator in content.lower():
+                bias_score += 0.1   
+                
+            
+        return max(0.0, 1.0 - bias_score)
+    
+    
