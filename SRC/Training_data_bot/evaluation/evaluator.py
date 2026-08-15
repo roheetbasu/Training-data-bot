@@ -33,3 +33,26 @@ class QualityEvaluator:
             warning = []  
         )
         
+    async def evaluate_dataset(self, dataset; Dataset):
+        """ Evaluate entire dataset """
+        # Mock dataset evaluation
+        scores = {
+            QualityMetric.TOXICITY: 0.2,
+            QualityMetric.BIAS: 0.3,
+            QualityMetric.DIVERSITY: 0.8,
+            QualityMetric.COHERENCE: 0.85,
+            QualityMetric.RELEVANCE: 0.9
+        }
+        
+        overall_score = sum(scores.values()) / len(scores)
+        passed = overall_score > 0.7
+        
+        return QualityReport(
+            target_id=dataset.id,
+            target_type="dataset",
+            overall_score=overall_score,
+            passed=passed,
+            metric_scores=scores,
+            issues=[] if passed else ["Dataset quality score too low"],
+            warning = []  
+        )
