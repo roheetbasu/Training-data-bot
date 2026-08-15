@@ -89,4 +89,18 @@ class QualityEvaluator:
             
         return max(0.0, 1.0 - bias_score)
     
+    def _check_diversity(self, example):
+        """ Check content variety and uniqueness """
+        
+        #check the vocabulary diversity
+        words = example.output_text
+        unique_words = set(words)
+        
+        if len(words) == 0:
+            return 0.0
+        
+        # Higher diversity score is better
+        diversity_ratio = len(unique_words) / len(words)
+        return min(1.0, diversity_ratio * 2) #scale to 0-1 
+        
     
