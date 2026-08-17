@@ -1,5 +1,6 @@
 import json,csv
 from pathlib import Path
+from typing import Union
 
 from ..core.logging import get_logger
 from ..core.models import Dataset, ExportFormat
