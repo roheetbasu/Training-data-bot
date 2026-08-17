@@ -41,7 +41,7 @@ class DatasetExporter:
                 line = {
                     "input": example.input_text,
                     "output": example.output_text,
-                    "task_type": example.task_type,
+                    "task_type": example.task_type.value if hasattr(example.task_type, 'value') else example.task_type,
                     "id": str(example.id),
                     "metadata": {
                         "source_document_id": str(example.source_document_id),
@@ -54,4 +54,28 @@ class DatasetExporter:
         
         self.logger.info(f"Exported {len(dataset.examples)} examples to {output_path} in JSONL format")
         return output_path
+    
+    async def _export_csv(self, dataset: Dataset, output_path: Path) -> Path:
+        """ Export to CSV format """
         
+        output_path = output_path.with_suffix('.csv')
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            
+            # write header
+            writer.writerow(['input', 'output', 'task_type', 'id', 'quality_approved'])
+            
+            #write data
+            for example in dataset.examples:
+                writer.writerow([
+                    example.input_text,
+                    example.output_text,
+                    example.task_type.value if hasattr(example.task_type, 'value') else example.task_type,
+                    str(example.id),
+                    example.quality_approved]
+                )
+                
+        self.logger.info(f"Exported {len(dataset.examples)} examples to {output_path} in CSV format")
+        return output_path
