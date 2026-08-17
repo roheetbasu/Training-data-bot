@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional, Dict, List, Union, Any
 
 from .base import BaseLoader
-from .documents import DocumentLoader
+from .document import DocumentLoader
 from .pdf import PDFLoader
 from .web import WebLoader
 from ..core.models import Document, DocumentType
@@ -38,7 +38,7 @@ class UnifiedLoader(BaseLoader):
                         self.web_loader = WebLoader()
                 
                 # All supported formats
-                self.supported_formats = list(DocumentLoader)
+                self.supported_formats = list(DocumentType)
            
         async def load_single(
                 self,
