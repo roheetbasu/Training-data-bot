@@ -42,7 +42,7 @@ class QualityEvaluator:
             warnings = warnings  
         )
         
-    async def evaluate_dataset(self, dataset; Dataset):
+    async def evaluate_dataset(self, dataset: Dataset):
         """Evaluate an entire dataset by aggregating example-level scores."""
         if not dataset.examples:
             return QualityReport(
