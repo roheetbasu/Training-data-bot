@@ -53,7 +53,7 @@ class DocumentLoader(BaseLoader):
                 elif doc_type == DocumentType.CSV:
                     content = await self._load_csv(source, encoding)
                 elif doc_type == DocumentType.DOCX:
-                    content = await self._Load_docx(source)
+                    content = await self._load_docx(source)
                 else:
                     raise DocumentLoadError(f"Unsupported format: {doc_type}")
                 
@@ -72,7 +72,7 @@ class DocumentLoader(BaseLoader):
             except Exception as e:
                 raise DocumentLoadError(
                     f"Failed to load {doc_type.value} file:  {source}",
-                    file_path = str(source)
+                    file_path = str(source),
                     cause = e
                 )
     
