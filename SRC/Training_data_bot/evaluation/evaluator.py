@@ -13,48 +13,77 @@ class QualityEvaluator:
         """ Evaluate single training example """
         # Mock quality evaluation for now
         scores = {
-            QualityMetric.TOXICITY: random.uniform(0.1,0.3),
-            QualityMetric.BIAS: random.uniform(0.1, 0.4),
-            QualityMetric.DIVERSITY: random.uniform(0.6, 0.9),
-            QualityMetric.COHERENCE: random.uniform(0.7, 0.95),
-            QualityMetric.RELEVANCE: random.uniform(0.8, 0.95),
+            QualityMetric.TOXICITY: self._check_toxicity(example),
+            QualityMetric.BIAS: self._check_bias(example),
+            QualityMetric.DIVERSITY: self._check_diversity(example),
+            QualityMetric.COHERENCE: self._check_coherence(example),
+            QualityMetric.RELEVANCE: self._check_relevance(example),
         }
         
         overall_score = sum(scores.values()) / len(scores)
         passed = overall_score > 0.6
         
+        issues = []
+        warnings = []
+        if not passed:
+            issues.append("Quality score too low")
+        if scores[QualityMetric.TOXICITY] < 0.7:
+            warnings.append("Possible toxic content detected")
+        if scores[QualityMetric.BIAS] < 0.7:
+            warnings.append("Possible biased language detected")
+            
         return QualityReport(
             target_id=example.id,
             target_type="example",
             overall_score=overall_score,
             passed=passed,
             metric_scores=scores,
-            issues=[] if passed else ["Quality score too low"],
-            warning = []  
+            issues= issues,
+            warnings = warnings  
         )
         
     async def evaluate_dataset(self, dataset; Dataset):
-        """ Evaluate entire dataset """
-        # Mock dataset evaluation
-        scores = {
-            QualityMetric.TOXICITY: 0.2,
-            QualityMetric.BIAS: 0.3,
-            QualityMetric.DIVERSITY: 0.8,
-            QualityMetric.COHERENCE: 0.85,
-            QualityMetric.RELEVANCE: 0.9
-        }
-        
+        """Evaluate an entire dataset by aggregating example-level scores."""
+        if not dataset.examples:
+            return QualityReport(
+                target_id=dataset.id,
+                target_type="dataset",
+                overall_score=0.0,
+                passed=False,
+                metric_scores={},
+                issues=["Dataset has no examples"],
+                warnings=[],
+            )
+ 
+        # Score every example, then average each metric across the dataset
+        example_reports = [await self.evaluate_example(ex) for ex in dataset.examples]
+ 
+        metric_totals = {metric: 0.0 for metric in QualityMetric}
+        for report in example_reports:
+            for metric, score in report.metric_scores.items():
+                metric_totals[metric] += score
+ 
+        num_examples = len(example_reports)
+        scores = {metric: total / num_examples for metric, total in metric_totals.items()}
+ 
         overall_score = sum(scores.values()) / len(scores)
         passed = overall_score > 0.7
-        
+ 
+        failed_count = sum(1 for r in example_reports if not r.passed)
+        issues = []
+        if not passed:
+            issues.append("Dataset quality score too low")
+        if failed_count > 0:
+            issues.append(f"{failed_count}/{num_examples} examples failed quality checks")
+ 
         return QualityReport(
             target_id=dataset.id,
             target_type="dataset",
             overall_score=overall_score,
             passed=passed,
             metric_scores=scores,
-            issues=[] if passed else ["Dataset quality score too low"],
-            warning = []  
+            issues=issues,
+            warnings=[],
         )
     
     def _check_toxicity(self, example):
@@ -93,7 +122,7 @@ class QualityEvaluator:
         """ Check content variety and uniqueness """
         
         #check the vocabulary diversity
-        words = example.output_text
+        words = example.output_text.split()
         unique_words = set(words)
         
         if len(words) == 0:

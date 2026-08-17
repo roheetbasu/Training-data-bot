@@ -262,7 +262,7 @@ class QualityReport(BaseEntity):
     
     # Issues found
     issues: List[str] = Field(default_factory=list)
-    warning: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
     
     #Assessment metadata
     assessed_at: datetime = Field(default_factory=datetime.utcnow)
