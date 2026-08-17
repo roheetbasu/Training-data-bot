@@ -1,6 +1,6 @@
 import random
 
-from ..core.models import Dataset, TrainingExample, QualityReport, QualityMetric
+from ..core.models import Dataset, TrainingExample, QualityReport, QualityMetric, TaskType
 from ..core.logging import get_logger
 
 class QualityEvaluator:
@@ -122,4 +122,59 @@ class QualityEvaluator:
         coherence_score = min(1.0, overlap/10) 
         
         return max(0.7, coherence_score) # minimum baseline
+    
+    def _check_relevance(self, example):
+        """ check if output is relevant to input """
+        
+        # check task specific relevance
+        if example.task_type == TaskType.QA_GENERATION:
+            return self._check_qa_relevance(example)
+        elif example.task_type == TaskType.CLASSIFICATION:
+            return self._check_classification_relevance(example)
+        elif example.task_type == TaskType.SUMMARIZATION:
+            return self._check_summary_relevance(example)
+
+        return 0.0 # Default relevance score
+    
+    def _check_qa_relevance(self, example):
+        
+        # check if output contain Q&A format
+        output = example.output_text
+        if "Q:" in output and "A:" in output:
+            return 0.9
+        return 0.3
+    
+    
+    def _check_classification_relevance(self, example):
+        
+        # check whether the output looks like valid classification
+        output = example.output_text.strip()
+        
+        if not output:
+            return 0.0
+        if len(output.split()) <= 5:
+            return 0.9
+        return 0.4
+    
+    def _check_summary_relevance(self, example):
+        """ check if output is genuine summary """
+        input_text = example.input_text
+        output_text = example.output_text
+        
+        if not output_text:
+            return 0.0
+        
+        input_len = len(input_text.split())
+        output_len = len(output_text.split())
+        
+        if input_len == 0:
+            return 0.0
+        
+        compression_ratio = output_len/input_len
+        
+        if compression_ratio < 0.5:
+            return 0.9
+        elif compression_ratio < 0.8:
+            return 0.6
+        return 0.3
      
