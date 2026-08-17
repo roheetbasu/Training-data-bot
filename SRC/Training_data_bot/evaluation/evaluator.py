@@ -103,4 +103,23 @@ class QualityEvaluator:
         diversity_ratio = len(unique_words) / len(words)
         return min(1.0, diversity_ratio * 2) #scale to 0-1 
         
-    
+    def _check_coherence(self, example):
+        """ check logical consistency and clarity """
+        
+        # Basic coherence check
+        output = example.output_text
+        
+        #check if output is not empty
+        if not output.strip():
+            return 0.0
+        
+        # check if output is related to input
+        input_words = set(example.input_text.lower().split())
+        output_words = set(output.lower().split())
+        
+        # calculate the words overlapping
+        overlap = len(input_words.intersection(output_words))
+        coherence_score = min(1.0, overlap/10) 
+        
+        return max(0.7, coherence_score) # minimum baseline
+     
