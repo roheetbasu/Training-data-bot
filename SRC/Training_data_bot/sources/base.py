@@ -149,7 +149,7 @@ class BaseLoader(ABC):
         
         if isinstance(source, str):
             metadata["source"] = source
-            if source.startswith (("https://, http://")):
+            if source.startswith(("https://", "http://")):
                 metadata["source_type"] = "url"
             else:
                 metadata["source_type"] = "file"

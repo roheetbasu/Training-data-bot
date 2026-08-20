@@ -51,7 +51,7 @@ class TrainingDataBot:
     def _init_components(self):
         """Initiaize all bot components"""
         try:
-            self.loader =UnifiedLoader()
+            self.loader = UnifiedLoader()
             self.decodo_client = DecodoClient()
             self.ai_client = AIClient()
             self.taskmanager = TaskManager()
@@ -172,7 +172,7 @@ class TrainingDataBot:
                                 
                                 # Apply quality filter
                                 if quality_filter:
-                                    quality_report = await self.evaluator.evaluate(example)
+                                    quality_report = await self.evaluator.evaluate_example(example)
                                     if quality_report.passed:
                                         all_examples.append(example)
                                         example.quality_approved = True
@@ -224,10 +224,7 @@ class TrainingDataBot:
     ):
         with LogContext("Dataset_evaluation", dataset_id=str(dataset.id)):
             try:
-                report = await self.evaluator.evaluate_dataset(
-                    dataset = dataset,
-                    detailed = detailed_report
-                )
+                report = await self.evaluator.evaluate_dataset(dataset)
                 
                 self.logger.info(f"Dataset Evaluation Completed. Overall score: {report.overall_score:.2f}")
                 return report

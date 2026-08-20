@@ -14,11 +14,7 @@ class BaseEntity(BaseModel):
     updated_at: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict) 
     
-    class Config:
-        use_enum_values = True
-        allow_population_by_field_name = True
-        arbitary_types_allowed = True
-        
+
 #Enum
 class DocumentType(str, Enum):
     """Supported Document types"""

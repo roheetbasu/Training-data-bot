@@ -10,7 +10,7 @@ from ..decodo import DecodoClient
 
 class WebLoader(BaseLoader):
     
-    def __init__(self, use_decodo: bool = True, **decodo_kwargs):
+    def __init__(self, use_decodo: bool = False, **decodo_kwargs):
         super().__init__()
         self.supported_formats = [DocumentType.URL]
         self.logger = get_logger("web_loader")

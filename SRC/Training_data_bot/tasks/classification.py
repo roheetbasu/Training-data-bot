@@ -24,7 +24,7 @@ class ClassficationGenerator(BaseTaskGenerator):
             # Call Decodo API
             response = await client.process_text(
                 prompt=prompt,
-                input_text=input_chunk,
+                input_text=input_chunk.content,
                 task_type=template.task_type
             )
             

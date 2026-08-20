@@ -28,7 +28,7 @@ class TextProcessor():
     def _clean_text(self, text: str) -> str:
         """ Basic Text Cleaning """
         # Remove excessive whitespaces
-        text = re.sub(r'\s+', '', text)
+        text = re.sub(r'\s+', ' ', text)
         
         #Remove very short lines
         lines = text.split('\n')

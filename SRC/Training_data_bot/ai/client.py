@@ -1,230 +1,190 @@
-import asyncio
-from typing import Dict, Any, Optional
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
-import json
 import os
+import time
+from typing import Any, Dict, Optional
 
-from ..core.config import settings
-from ..core.models import DecodoRequest, DecodoResponse, TaskType
-from ..core.exceptions import DecodoAPIError, Authentication
+import httpx
+
 from ..core.logging import get_logger, log_api_call
+from ..core.models import DecodoRequest, DecodoResponse, TaskType
 
 
 class AIClient:
-    
+    """Small provider client with a deterministic local simulation fallback."""
+
     def __init__(self):
-        
         self.logger = get_logger("ai.client")
-        
-        # Try to use OpenAI
-        self.openai_api_key = os.getenv("OPEN_API_KEY")
+        self.openai_api_key = os.getenv("OPENAI_API_KEY") or os.getenv("OPEN_API_KEY")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-        
-        # Default to simulation if no AI API keys are available
-        self.use_simulation = not (self.openai_api_key or self.anthropic_api_key)
-        
+        self.provider = os.getenv("AI_PROVIDER", "auto").lower()
+        self.use_simulation = self.provider == "simulation" or (
+            self.provider == "auto" and not (self.openai_api_key or self.anthropic_api_key)
+        )
         if self.use_simulation:
-            self.logger.info("No AI API keys found, Using Simulation mode for development")
-            
+            self.logger.info("AI provider: simulation")
         else:
-            self.logger.info("AI Client initialized with real api access ") 
-    
-    @retry(
-        stop = stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
-    
+            self.logger.info("AI provider: %s", self.provider if self.provider != "auto"
+                             else ("openai" if self.openai_api_key else "anthropic"))
+
     @log_api_call("ai")
     async def process_text(
         self,
         prompt: str,
         input_text: str,
         task_type: Optional[TaskType] = None,
-        parameters: Optional[Dict[str, Any]] = None
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> DecodoResponse:
-        """  Processing text using AI/ML services  """
         request = DecodoRequest(
-            prompt= prompt,
-            input_text = input_text,
-            task_type = task_type,
-            parameters = parameters or {}
+            prompt=prompt,
+            input_text=input_text,
+            task_type=task_type,
+            parameters=parameters or {},
         )
-        
-        try: 
+        start = time.perf_counter()
+        try:
             if self.use_simulation:
-                response =  await self._simulate_ai_call(request)
+                result = await self._simulate_ai_call(request)
+            elif self.openai_api_key and self.provider in ("auto", "openai"):
+                result = await self._call_openai(request)
+            elif self.anthropic_api_key and self.provider in ("auto", "anthropic"):
+                result = await self._call_anthropic(request)
             else:
-                # Try to call real AI API call
-                if self.openai_api_key:
-                    response = await self._call_openai(request)
-                elif self.anthropic_api_key:
-                    response = await self._call_anthropic(request)
-                else:
-                    response =  await self._simulate_ai_call(request)
-                
-            return DecodoResponse(
-                request_id = request.request_id,
-                success=True,
-                output=response["output"],
-                confidence=response.get("confidence"),
-                token_usage = response.get("token_usage", 0),
-                cost = response.get("cost"),
-                processing_time = response.get("processing_time")
-            )
-            
-        except Exception as e:
-            self.logger.error(f"AI processsing failed; {e}")
-            # Fallback to simulation
-            response = await self._simulate_ai_call(request)
+                result = await self._simulate_ai_call(request)
+            result.setdefault("processing_time", time.perf_counter() - start)
             return DecodoResponse(
                 request_id=request.request_id,
                 success=True,
-                output=response["output"],
-                confidence=response.get("confidence", 0.7),
-                token_usage=response.get("token_usage", 0),
-                cost=response.get("cost"),
-                processing_time=response.get("processing_time")
+                output=result.get("output", ""),
+                confidence=result.get("confidence", 0.8),
+                token_usage=result.get("token_usage", 0),
+                cost=result.get("cost"),
+                processing_time=result.get("processing_time"),
             )
-        
-    
-    async def _call_openai(self, request: DecodoResponse) -> Dict[str, Any]:
-        """ Call OpenAI API for text generation. """
-        import time
-        start_time = time.time()
-        
-        headers ={
-            "Authorization": f"Bearer {self.openai_api_key}",
-            "Content_type" : "application/json"
-        }
-        
-        # Build prompt based on task type
-        system_prompt = self._build_system_prompt(request.task_type),
-        user_prompt = f"{request.prompt}\n\n Text: {request.input_text}"
-        
+        except Exception as exc:
+            self.logger.warning("AI call failed; using simulation fallback: %s", exc)
+            result = await self._simulate_ai_call(request)
+            return DecodoResponse(
+                request_id=request.request_id,
+                success=True,
+                output=result["output"],
+                confidence=result.get("confidence", 0.7),
+                token_usage=result.get("token_usage", 0),
+                cost=0.0,
+                processing_time=time.perf_counter() - start,
+            )
+
+    async def _call_openai(self, request: DecodoRequest) -> Dict[str, Any]:
+        start = time.perf_counter()
+        system_prompt = self._build_system_prompt(request.task_type)
         payload = {
-            "model" : "gpt-3.5-turbo",
-            "messages" : [
+            "model": request.parameters.get("model", os.getenv("OPENAI_MODEL", "gpt-4o-mini")),
+            "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": f"{request.prompt}\n\nText: {request.input_text}"},
             ],
-            "max_tokens" : request.parameters.get("max_tokens", 1000),
-            "temperature" : request.parameters.get("temperature", 0.7)
+            "max_tokens": request.parameters.get("max_tokens", 1000),
+            "temperature": request.parameters.get("temperature", 0.2),
         }
-        
-        async with httpx.AsyncClient() as client:
+        headers = {"Authorization": f"Bearer {self.openai_api_key}"}
+        async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=30.0
             )
-            
             response.raise_for_status()
-            
             data = response.json()
-            output = data["choices"][0]["message"]["content"]
-            token_usage = data.get("usage", {}).get("total_token", 0)
-            
-            return {
-                "output" : output,
-                "confidence" : 0.9,
-                "token_usage" : token_usage,
-                "cost" : token_usage * 0.002/ 1000, # Rough estimate
-                "processing_time" : time.time() - start_time 
-            } 
-            
+        usage = data.get("usage", {})
+        tokens = usage.get("total_tokens", 0)
+        return {
+            "output": data["choices"][0]["message"]["content"].strip(),
+            "confidence": 0.9,
+            "token_usage": tokens,
+            "cost": None,
+            "processing_time": time.perf_counter() - start,
+        }
+
     async def _call_anthropic(self, request: DecodoRequest) -> Dict[str, Any]:
-        """ Call Anthropic Api for text generation """
-        import time
-        start_time = time.time()
-    
-        headers ={
-            "x-api-key": f"Bearer {self.anthropic_api_key}",
-            "Content_type" : "application/json",
-            "anthropic-version" : 
-        }
-        
-        # Build prompt based on task type
-        system_prompt = self._build_system_prompt(request.task_type)
-        user_prompt = f"{request.prompt}\n\n Text: {request.input_text}"
-        
+        start = time.perf_counter()
         payload = {
-            "model" : "claude-3-haiku-20240307",
-            "max_tokens" : request.parameters.get("max_tokens", 1000),
-            "system" : system_prompt,
-            "messages" : [
-                {"role": "user", "content": user_prompt}
-            ],
+            "model": request.parameters.get(
+                "model", os.getenv("ANTHROPIC_MODEL", "claude-3-5-haiku-latest")
+            ),
+            "max_tokens": request.parameters.get("max_tokens", 1000),
+            "system": self._build_system_prompt(request.task_type),
+            "messages": [{
+                "role": "user",
+                "content": f"{request.prompt}\n\nText: {request.input_text}",
+            }],
         }
-        
-        async with httpx.AsyncClient() as client:
+        headers = {
+            "x-api-key": self.anthropic_api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
                 "https://api.anthropic.com/v1/messages",
                 headers=headers,
                 json=payload,
-                timeout=30.0
             )
-            
             response.raise_for_status()
-            
             data = response.json()
-            output = data["content"][0]["text"]
-            token_usage = data.get("usage", {}).get("total_token", 0)
-            
-            return {
-                "output" : output,
-                "confidence" : 0.9,
-                "token_usage" : token_usage,
-                "cost" : token_usage * 0.002/ 1000, # Rough estimate
-                "processing_time" : time.time() - start_time 
-            }     
-        
+        usage = data.get("usage", {})
+        tokens = usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
+        return {
+            "output": data["content"][0]["text"].strip(),
+            "confidence": 0.9,
+            "token_usage": tokens,
+            "cost": None,
+            "processing_time": time.perf_counter() - start,
+        }
+
     def _build_system_prompt(self, task_type: Optional[TaskType]) -> str:
-        """ Build system prompt based on task type. """
         if task_type == TaskType.QA_GENERATION:
-            return "You are an expert at creating high-quality question-answer pairs from that content. Generate relevant, clear and accurate questions with answer based only on the provided text"
-        elif task_type == TaskType.CLASSIFICATION:
-            return "You are an expert at text classification. Analyze the given text and provide accurate classification result based on its content"
-        elif task_type == TaskType.SUMMARIZATION:
-            return "You are an expert at text summarization. Create concise, accurate summaries that capture the key point and important information without adding unnecessary information"
-        else:
-            return "You are a helpful AI assistant that processes text according to the given instructions."
-    
-    async def _simulate_ai_call(self, request):
-        """ Simulate when real ai is not available  """
+            return "Create accurate question-answer pairs using only the supplied text."
+        if task_type == TaskType.CLASSIFICATION:
+            return "Classify the supplied text concisely and explain the label only when useful."
+        if task_type == TaskType.SUMMARIZATION:
+            return "Write a concise, faithful summary of the supplied text without inventing facts."
+        return "Follow the user's instruction using only the supplied text."
+
+    async def _simulate_ai_call(self, request: DecodoRequest) -> Dict[str, Any]:
+        text = request.input_text.strip()
         if request.task_type == TaskType.QA_GENERATION:
-            return {"output" : self._generate_mock_qa(request.input_text)}
+            output = self._generate_mock_qa(text)
         elif request.task_type == TaskType.CLASSIFICATION:
-            return {"output" : self._generate_mock_classification(request.input_text)}
+            output = self._generate_mock_classification(text)
         elif request.task_type == TaskType.SUMMARIZATION:
-            return {"output" : self._generate_mock_summary(request.input_text)}
-        
-        return {"output" : "Simulated AI response", "confidence": 0.7}
-    
-    def _generate_mock_qa(self, text):
-        """ Generate Realistics Q&A for testing """
-        return f"""Q: What is the main topic of this test?
-    A:{text[:100]} 
-    
-    Q: What are the key points mentioned?
-    A: The text discusses several important concepts related to the subject matters."""
-
-    def _generate_mock_classification(self, text):
-        """ Generate realistics classification """
-        if "science" in text.lower():
-            return "Science"
-        elif "history" in text.lower():
-            return "History"
+            output = self._generate_mock_summary(text)
         else:
-            return "General"    
-    
-    def _generate_mock_summary(self, text):
-        """Generate realistic summary for testing."""
-        if len(text) <= 200:
-            return f"Summary: {text}"
+            output = text[:500]
+        return {"output": output, "confidence": 0.85, "token_usage": max(1, len(text.split()))}
 
+    def _generate_mock_qa(self, text: str) -> str:
+        excerpt = " ".join(text.split())[:220]
         return (
-            f"Summary: The text discusses the following topic: "
-            f"{text[:200]}..."
+            "Q: What is the main topic of the provided text?\n"
+            f"A: {excerpt}\n\n"
+            "Q: What key information does the text contain?\n"
+            "A: It contains the main facts and concepts described in the source text."
         )
+
+    def _generate_mock_classification(self, text: str) -> str:
+        lowered = text.lower()
+        if any(w in lowered for w in ("science", "physics", "biology", "chemistry")):
+            return "Science"
+        if any(w in lowered for w in ("history", "war", "empire", "historical")):
+            return "History"
+        if any(w in lowered for w in ("python", "software", "computer", "machine learning")):
+            return "Technology"
+        return "General"
+
+    def _generate_mock_summary(self, text: str) -> str:
+        clean = " ".join(text.split())
+        if len(clean) <= 300:
+            return f"Summary: {clean}"
+        return f"Summary: {clean[:300].rsplit(' ', 1)[0]}..."
+
+    async def close(self):
+        """Compatibility hook; this client creates short-lived HTTP clients."""
+        return None

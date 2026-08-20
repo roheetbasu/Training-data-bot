@@ -3,7 +3,6 @@
 import asyncio
 from typing import Dict, Any, Optional, List
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential
 import time
 import os
 
@@ -20,9 +19,9 @@ class DecodoClient:
         self.timeout = settings.decodo.timeout
         self.max_retries = settings.decodo.max_retries
         
-        self.username = os.getenv("DECODO_USERNAME") or "U0000283015"
-        self.password = os.getenv("DECODO_PASSWORD") or "PW_1fcac9f9d8fhg09rt5"
-        self.basic_auth_token = os.getenv("DECODO_BASIC_AUTH") or "VTaw45kd45df9ddf0"
+        self.username = os.getenv("DECODO_USERNAME")
+        self.password = os.getenv("DECODO_PASSWORD")
+        self.basic_auth_token = os.getenv("DECODO_BASIC_AUTH")
         
         # set up headers
         headers = {
@@ -42,10 +41,6 @@ class DecodoClient:
             headers = headers
         )
         
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
     
     @log_api_call("decodo")
     async def scrape_url(
@@ -207,3 +202,6 @@ class DecodoClient:
             raise DecodoAPIError(
                 f"Unexpected error while scraping {url}: {e}"
             ) from e
+
+    async def close(self):
+        await self.client.aclose()
